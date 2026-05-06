@@ -1,0 +1,20 @@
+name: anniversary_app
+description: Nathan & Frenzy - One Year of Love
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^6.1.0
+  animate_do: ^3.3.4
+  intl: ^0.19.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

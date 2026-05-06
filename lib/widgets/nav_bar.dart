@@ -6,6 +6,7 @@ class NavBar extends StatelessWidget {
   final bool isScrolled;
   final VoidCallback onCountdown;
   final VoidCallback onGallery;
+  final VoidCallback onVideos;
   final VoidCallback onTimeline;
   final VoidCallback onLetter;
 
@@ -14,6 +15,7 @@ class NavBar extends StatelessWidget {
     required this.isScrolled,
     required this.onCountdown,
     required this.onGallery,
+    required this.onVideos,
     required this.onTimeline,
     required this.onLetter,
   });
@@ -22,18 +24,23 @@ class NavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 350),
-      color: isScrolled ? AppColors.charcoal.withOpacity(0.92) : Colors.transparent,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+      color: isScrolled
+          ? AppColors.charcoal.withOpacity(0.92)
+          : Colors.transparent,
+      padding:
+          const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
       child: SafeArea(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _NavLink('Countdown', onCountdown),
-            const SizedBox(width: 32),
+            const SizedBox(width: 28),
             _NavLink('Gallery', onGallery),
-            const SizedBox(width: 32),
+            const SizedBox(width: 28),
+            _NavLink('Videos', onVideos),
+            const SizedBox(width: 28),
             _NavLink('Timeline', onTimeline),
-            const SizedBox(width: 32),
+            const SizedBox(width: 28),
             _NavLink('Letter', onLetter),
           ],
         ),
@@ -58,7 +65,7 @@ class _NavLinkState extends State<_NavLink> {
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
-      onExit:  (_) => setState(() => _hovered = false),
+      onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedDefaultTextStyle(
@@ -67,7 +74,9 @@ class _NavLinkState extends State<_NavLink> {
             fontSize: 11,
             fontWeight: FontWeight.w200,
             letterSpacing: 3.0,
-            color: _hovered ? AppColors.gold : AppColors.cream.withOpacity(0.55),
+            color: _hovered
+                ? AppColors.gold
+                : AppColors.cream.withOpacity(0.55),
           ),
           child: Text(widget.label.toUpperCase()),
         ),

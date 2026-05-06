@@ -3,6 +3,7 @@ import '../app.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/countdown_section.dart';
 import '../widgets/gallery_section.dart';
+import '../widgets/video_gallery_section.dart';
 import '../widgets/timeline_section.dart';
 import '../widgets/letter_section.dart';
 import '../widgets/footer_section.dart';
@@ -19,12 +20,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  static const _sectionCount = 6;
+  static const _sectionCount = 7;
 
   static const _sectionLabels = [
     'Home',
     'Countdown',
     'Gallery',
+    'Videos',
     'Timeline',
     'Letter',
     'Forever',
@@ -69,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
               HeroSection(),
               CountdownSection(),
               GallerySection(),
+              VideoGallerySection(),
               TimelineSection(),
               LetterSection(),
               FooterSection(),
@@ -78,16 +81,18 @@ class _HomeScreenState extends State<HomeScreen> {
           // Navigation bar
           NavBar(
             isScrolled: _currentPage > 0,
-            onCountdown: () => _goToPage(1),
-            onGallery:   () => _goToPage(2),
-            onTimeline:  () => _goToPage(3),
-            onLetter:    () => _goToPage(4),
+            onCountdown:    () => _goToPage(1),
+            onGallery:      () => _goToPage(2),
+            onVideos:       () => _goToPage(3),
+            onTimeline:     () => _goToPage(4),
+            onLetter:       () => _goToPage(5),
           ),
 
           // Dot indicators (right side)
           Positioned(
             right: 20,
-            top: 0, bottom: 0,
+            top: 0,
+            bottom: 0,
             child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -99,7 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       message: _sectionLabels[i],
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(vertical: 5),
+                        margin:
+                            const EdgeInsets.symmetric(vertical: 5),
                         width: active ? 6 : 4,
                         height: active ? 18 : 4,
                         decoration: BoxDecoration(

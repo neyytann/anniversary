@@ -280,12 +280,13 @@ class LetterSection extends StatelessWidget {
                                             'A year ago, you walked into my life and quietly rearranged everything '
                                             '— in the most beautiful way. Every ordinary day became extraordinary '
                                             'because of you. Your laughter is the sound I look forward to most, '
-                                            'your presence the calm I always come home to.\n\n'
+                                            'your presence I always wanna come home to.\n\n'
                                             'In you, I found not just love, but a home. I found someone who makes '
                                             'me want to be better, feel deeper, and dream bigger. Every moment with '
                                             'you has been a gift I treasure more than words can hold.\n\n'
-                                            'Happy first anniversary, my love. Here\'s to every year that follows '
-                                            '— may they be even more wonderful than this one.',
+                                            'Happy first anniversary, my baby. May our dreams come true, always choose '
+                                            'love over hate, and stay together through lifetime. I always love you, my '
+                                            'babyyy!',
                                             style:
                                                 GoogleFonts.cormorantGaramond(
                                               fontSize:

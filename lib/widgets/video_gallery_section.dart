@@ -5,15 +5,6 @@ import '../app.dart';
 class VideoGallerySection extends StatelessWidget {
   const VideoGallerySection({super.key});
 
-  static const _captions = [
-    'Our first video',
-    'A stolen moment',
-    'Dancing together',
-    'Road trip laughs',
-    'Just being us',
-    'Forever on film',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -104,18 +95,28 @@ class VideoGallerySection extends StatelessWidget {
               ),
               const SizedBox(height: 28),
               Expanded(
-                child: isMobile
-                    ? _MobileGrid(captions: _captions, size: size)
-                    : _FilmstripRow(captions: _captions, size: size, isVideo: true),
+                child: Center(
+                  child: _SingleFilmCard(
+                    caption: 'Video of memories',
+
+                    width: isMobile
+                        ? size.width * 0.85        // mobile: stable width
+                        : size.width * 0.60,       // desktop: wider card
+
+                    height: isMobile
+                        ? size.height * 0.65       // mobile: taller only
+                        : size.height * 0.65,      // desktop: taller + more presence
+                  ),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 20, top: 12),
                 child: Text(
-                  '✦  videos coming soon  ✦',
+                  '✦  our memories ✦',
                   style: GoogleFonts.cormorantGaramond(
                     fontSize: 11,
                     fontStyle: FontStyle.italic,
-                    color: AppColors.muted.withOpacity(0.6),
+                    color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.6),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -128,70 +129,24 @@ class VideoGallerySection extends StatelessWidget {
   }
 }
 
-// ─── Filmstrip layout for desktop ───────────────────────────────────────────
+// ─── Single centered film card ───────────────────────────────────────────────
 
-class _FilmstripRow extends StatelessWidget {
-  final List<String> captions;
-  final Size size;
-  final bool isVideo;
-
-  const _FilmstripRow({
-    required this.captions,
-    required this.size,
-    required this.isVideo,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cardH = size.height * 0.52;
-    final cardW = cardH * 0.72;
-    final spacing = 16.0;
-    final totalW = cardW * captions.length + spacing * (captions.length - 1);
-    final sidePad = ((size.width - totalW) / 2).clamp(40.0, double.infinity);
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: sidePad),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: List.generate(captions.length, (i) {
-          return Padding(
-            padding: EdgeInsets.only(right: i < captions.length - 1 ? spacing : 0),
-            child: _FilmCard(
-              caption: captions[i],
-              width: cardW,
-              height: cardH,
-              index: i,
-              isVideo: isVideo,
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}
-
-class _FilmCard extends StatefulWidget {
+class _SingleFilmCard extends StatefulWidget {
   final String caption;
   final double width;
   final double height;
-  final int index;
-  final bool isVideo;
 
-  const _FilmCard({
+  const _SingleFilmCard({
     required this.caption,
     required this.width,
     required this.height,
-    required this.index,
-    required this.isVideo,
   });
 
   @override
-  State<_FilmCard> createState() => _FilmCardState();
+  State<_SingleFilmCard> createState() => _SingleFilmCardState();
 }
 
-class _FilmCardState extends State<_FilmCard> {
+class _SingleFilmCardState extends State<_SingleFilmCard> {
   bool _hovered = false;
 
   @override
@@ -199,103 +154,108 @@ class _FilmCardState extends State<_FilmCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedScale(
-        scale: _hovered ? 1.04 : 1.0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-        child: AnimatedContainer(
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _hovered = true),
+        onTapUp: (_) => setState(() => _hovered = false),
+        onTapCancel: () => setState(() => _hovered = false),
+        child: AnimatedScale(
+          scale: _hovered ? 1.04 : 1.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            color: const Color(0xFF161214),
-            borderRadius: BorderRadius.circular(2),
-            border: Border.all(
-              color: _hovered
-                  ? AppColors.rose.withOpacity(0.55)
-                  : AppColors.rose.withOpacity(0.12),
-              width: 0.8,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(_hovered ? 0.65 : 0.4),
-                blurRadius: _hovered ? 28 : 14,
-                offset: const Offset(0, 8),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              color: const Color(0xFF161214),
+              borderRadius: BorderRadius.circular(2),
+              border: Border.all(
+                color: _hovered
+                    ? AppColors.rose.withOpacity(0.55)
+                    : AppColors.rose.withOpacity(0.12),
+                width: 0.8,
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 0, left: 0, right: 0,
-                  child: _FilmPerforations(),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(_hovered ? 0.65 : 0.4),
+                  blurRadius: _hovered ? 28 : 14,
+                  offset: const Offset(0, 8),
                 ),
-                Positioned(
-                  bottom: 0, left: 0, right: 0,
-                  child: _FilmPerforations(),
-                ),
-                Positioned.fill(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 22),
-                    child: Container(
-                      color: const Color(0xFF1E1820),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedOpacity(
-                            duration: const Duration(milliseconds: 300),
-                            opacity: _hovered ? 1.0 : 0.4,
-                            child: Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.rose.withOpacity(0.8),
-                                  width: 1,
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 0, left: 0, right: 0,
+                    child: _FilmPerforations(),
+                  ),
+                  Positioned(
+                    bottom: 0, left: 0, right: 0,
+                    child: _FilmPerforations(),
+                  ),
+                  Positioned.fill(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 22),
+                      child: Container(
+                        color: const Color(0xFF1E1820),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AnimatedOpacity(
+                              duration: const Duration(milliseconds: 300),
+                              opacity: _hovered ? 1.0 : 0.4,
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.rose.withOpacity(0.8),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.play_arrow_rounded,
+                                  color: AppColors.rose.withOpacity(0.9),
+                                  size: 28,
                                 ),
                               ),
-                              child: Icon(
-                                Icons.play_arrow_rounded,
-                                color: AppColors.rose.withOpacity(0.9),
-                                size: 22,
+                            ),
+                            const SizedBox(height: 16),
+                            AnimatedOpacity(
+                              duration: const Duration(milliseconds: 300),
+                              opacity: _hovered ? 1.0 : 0.35,
+                              child: Text(
+                                widget.caption,
+                                style: GoogleFonts.jost(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w300,
+                                  letterSpacing: 2.2,
+                                  color: AppColors.cream,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 14),
-                          AnimatedOpacity(
-                            duration: const Duration(milliseconds: 300),
-                            opacity: _hovered ? 1.0 : 0.35,
-                            child: Text(
-                              widget.caption,
+                            const SizedBox(height: 6),
+                            Text(
+                              '01',
                               style: GoogleFonts.jost(
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.w300,
-                                letterSpacing: 1.8,
-                                color: AppColors.cream,
+                                fontSize: 7,
+                                fontWeight: FontWeight.w200,
+                                letterSpacing: 1,
+                                color: AppColors.rose.withOpacity(0.3),
                               ),
-                              textAlign: TextAlign.center,
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            '0${widget.index + 1}',
-                            style: GoogleFonts.jost(
-                              fontSize: 7,
-                              fontWeight: FontWeight.w200,
-                              letterSpacing: 1,
-                              color: AppColors.rose.withOpacity(0.3),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -319,98 +279,6 @@ class _FilmPerforations extends StatelessWidget {
             borderRadius: BorderRadius.circular(1.5),
           ),
         )),
-      ),
-    );
-  }
-}
-
-// ─── Mobile grid layout ──────────────────────────────────────────────────────
-
-class _MobileGrid extends StatelessWidget {
-  final List<String> captions;
-  final Size size;
-
-  const _MobileGrid({required this.captions, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    final spacing = 8.0;
-    final hPad = 24.0;
-    final cellW = (size.width - hPad * 2 - spacing) / 2;
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: hPad),
-      child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: spacing,
-          mainAxisSpacing: spacing,
-          childAspectRatio: cellW / ((size.height - 320) / 3),
-        ),
-        itemCount: captions.length,
-        itemBuilder: (context, i) => _MobileCard(caption: captions[i]),
-      ),
-    );
-  }
-}
-
-class _MobileCard extends StatefulWidget {
-  final String caption;
-  const _MobileCard({required this.caption});
-
-  @override
-  State<_MobileCard> createState() => _MobileCardState();
-}
-
-class _MobileCardState extends State<_MobileCard> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: _pressed ? const Color(0xFF2A1F24) : const Color(0xFF1E1820),
-          borderRadius: BorderRadius.circular(2),
-          border: Border.all(
-            color: AppColors.rose.withOpacity(_pressed ? 0.5 : 0.18),
-            width: 0.8,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.rose.withOpacity(0.5),
-                  width: 1,
-                ),
-              ),
-              child: Icon(Icons.play_arrow_rounded,
-                  color: AppColors.rose.withOpacity(0.6), size: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.caption,
-              style: GoogleFonts.jost(
-                fontSize: 8,
-                fontWeight: FontWeight.w300,
-                letterSpacing: 1.2,
-                color: AppColors.muted,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }

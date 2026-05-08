@@ -293,7 +293,7 @@ class _TimelineSectionState extends State<TimelineSection>
           textAlign: align,
           style: GoogleFonts.jost(
             fontSize: 9.5,
-            fontWeight: FontWeight.w200,
+            fontWeight: FontWeight.w300,
             letterSpacing: 3,
             color: AppColors.gold,
           ),
@@ -304,7 +304,7 @@ class _TimelineSectionState extends State<TimelineSection>
           textAlign: align,
           style: GoogleFonts.cormorantGaramond(
             fontSize: 22,
-            fontWeight: FontWeight.w300,
+            fontWeight: FontWeight.w400,   // bumped from w300 → w400
             color: AppColors.cream,
             height: 1.2,
           ),
@@ -314,10 +314,10 @@ class _TimelineSectionState extends State<TimelineSection>
           m.description,
           textAlign: align,
           style: GoogleFonts.cormorantGaramond(
-            fontSize: 14,
-            fontWeight: FontWeight.w300,
+            fontSize: 15,                               // bumped from 14 → 15
+            fontWeight: FontWeight.w400,                // bumped from w300 → w400
             fontStyle: FontStyle.italic,
-            color: AppColors.muted,
+            color: AppColors.cream.withOpacity(0.78),  // was AppColors.muted
             height: 1.65,
           ),
         ),

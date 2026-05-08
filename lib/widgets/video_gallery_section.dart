@@ -24,7 +24,6 @@ class VideoGallerySection extends StatelessWidget {
       height: size.height,
       child: Stack(
         children: [
-          // Dark moody background — slightly cooler tint vs gallery
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -38,13 +37,9 @@ class VideoGallerySection extends StatelessWidget {
               ),
             ),
           ),
-
-          // Grain overlay
           Positioned.fill(
             child: CustomPaint(painter: _GrainPainter()),
           ),
-
-          // Rose vignette glow
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -59,13 +54,9 @@ class VideoGallerySection extends StatelessWidget {
               ),
             ),
           ),
-
-          // Content
           Column(
             children: [
               SizedBox(height: isMobile ? 80 : 90),
-
-              // Header
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 60),
                 child: Column(
@@ -111,17 +102,12 @@ class VideoGallerySection extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(height: 28),
-
-              // Filmstrip (desktop) or Grid (mobile)
               Expanded(
                 child: isMobile
                     ? _MobileGrid(captions: _captions, size: size)
                     : _FilmstripRow(captions: _captions, size: size, isVideo: true),
               ),
-
-              // Footer label
               Padding(
                 padding: const EdgeInsets.only(bottom: 20, top: 12),
                 child: Text(
@@ -170,13 +156,12 @@ class _FilmstripRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: List.generate(captions.length, (i) {
-          final isMiddle = i == captions.length ~/ 2 || i == captions.length ~/ 2 - 1;
           return Padding(
             padding: EdgeInsets.only(right: i < captions.length - 1 ? spacing : 0),
             child: _FilmCard(
               caption: captions[i],
               width: cardW,
-              height: isMiddle ? cardH * 1.06 : cardH,
+              height: cardH,
               index: i,
               isVideo: isVideo,
             ),
@@ -214,103 +199,104 @@ class _FilmCardState extends State<_FilmCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
+      child: AnimatedScale(
+        scale: _hovered ? 1.04 : 1.0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
-        width: widget.width,
-        height: _hovered ? widget.height * 1.04 : widget.height,
-        decoration: BoxDecoration(
-          color: const Color(0xFF161214),
-          borderRadius: BorderRadius.circular(2),
-          border: Border.all(
-            color: _hovered
-                ? AppColors.rose.withOpacity(0.55)
-                : AppColors.rose.withOpacity(0.12),
-            width: 0.8,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(_hovered ? 0.65 : 0.4),
-              blurRadius: _hovered ? 28 : 14,
-              offset: const Offset(0, 8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: const Color(0xFF161214),
+            borderRadius: BorderRadius.circular(2),
+            border: Border.all(
+              color: _hovered
+                  ? AppColors.rose.withOpacity(0.55)
+                  : AppColors.rose.withOpacity(0.12),
+              width: 0.8,
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: Stack(
-            children: [
-              // Film perforations top
-              Positioned(
-                top: 0, left: 0, right: 0,
-                child: _FilmPerforations(),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(_hovered ? 0.65 : 0.4),
+                blurRadius: _hovered ? 28 : 14,
+                offset: const Offset(0, 8),
               ),
-              // Film perforations bottom
-              Positioned(
-                bottom: 0, left: 0, right: 0,
-                child: _FilmPerforations(),
-              ),
-
-              // Main placeholder area
-              Positioned.fill(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 22),
-                  child: Container(
-                    color: const Color(0xFF1E1820),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedOpacity(
-                          duration: const Duration(milliseconds: 300),
-                          opacity: _hovered ? 1.0 : 0.4,
-                          child: Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.rose.withOpacity(0.8),
-                                width: 1,
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 0, left: 0, right: 0,
+                  child: _FilmPerforations(),
+                ),
+                Positioned(
+                  bottom: 0, left: 0, right: 0,
+                  child: _FilmPerforations(),
+                ),
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 22),
+                    child: Container(
+                      color: const Color(0xFF1E1820),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedOpacity(
+                            duration: const Duration(milliseconds: 300),
+                            opacity: _hovered ? 1.0 : 0.4,
+                            child: Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.rose.withOpacity(0.8),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.play_arrow_rounded,
+                                color: AppColors.rose.withOpacity(0.9),
+                                size: 22,
                               ),
                             ),
-                            child: Icon(
-                              Icons.play_arrow_rounded,
-                              color: AppColors.rose.withOpacity(0.9),
-                              size: 22,
+                          ),
+                          const SizedBox(height: 14),
+                          AnimatedOpacity(
+                            duration: const Duration(milliseconds: 300),
+                            opacity: _hovered ? 1.0 : 0.35,
+                            child: Text(
+                              widget.caption,
+                              style: GoogleFonts.jost(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w300,
+                                letterSpacing: 1.8,
+                                color: AppColors.cream,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 14),
-                        AnimatedOpacity(
-                          duration: const Duration(milliseconds: 300),
-                          opacity: _hovered ? 1.0 : 0.35,
-                          child: Text(
-                            widget.caption,
+                          const SizedBox(height: 6),
+                          Text(
+                            '0${widget.index + 1}',
                             style: GoogleFonts.jost(
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.w300,
-                              letterSpacing: 1.8,
-                              color: AppColors.cream,
+                              fontSize: 7,
+                              fontWeight: FontWeight.w200,
+                              letterSpacing: 1,
+                              color: AppColors.rose.withOpacity(0.3),
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '0${widget.index + 1}',
-                          style: GoogleFonts.jost(
-                            fontSize: 7,
-                            fontWeight: FontWeight.w200,
-                            letterSpacing: 1,
-                            color: AppColors.rose.withOpacity(0.3),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -211,8 +211,6 @@ class _FilmstripRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: List.generate(captions.length, (i) {
-          final isMiddle =
-              i == captions.length ~/ 2 || i == captions.length ~/ 2 - 1;
           return Padding(
             padding:
                 EdgeInsets.only(right: i < captions.length - 1 ? spacing : 0),
@@ -220,7 +218,7 @@ class _FilmstripRow extends StatelessWidget {
               caption: captions[i],
               photo: AssetImage(photos[i]),
               width: cardW,
-              height: isMiddle ? cardH * 1.06 : cardH,
+              height: cardH,
               index: i,
               isVideo: isVideo,
             ),
@@ -274,111 +272,124 @@ class _FilmCardState extends State<_FilmCard> {
       child: MouseRegion(
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
-        child: AnimatedContainer(
+        child: AnimatedScale(
+          scale: _hovered ? 1.04 : 1.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          width: widget.width,
-          height: _hovered ? widget.height * 1.04 : widget.height,
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1210),
-            borderRadius: BorderRadius.circular(2),
-            border: Border.all(
-              color: _hovered
-                  ? AppColors.gold.withOpacity(0.55)
-                  : AppColors.gold.withOpacity(0.15),
-              width: 0.8,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(_hovered ? 0.6 : 0.35),
-                blurRadius: _hovered ? 24 : 12,
-                offset: const Offset(0, 8),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1210),
+              borderRadius: BorderRadius.circular(2),
+              border: Border.all(
+                color: _hovered
+                    ? AppColors.gold.withOpacity(0.55)
+                    : AppColors.gold.withOpacity(0.15),
+                width: 0.8,
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 0, left: 0, right: 0,
-                  child: _FilmPerforations(),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(_hovered ? 0.6 : 0.35),
+                  blurRadius: _hovered ? 24 : 12,
+                  offset: const Offset(0, 8),
                 ),
-                Positioned(
-                  bottom: 0, left: 0, right: 0,
-                  child: _FilmPerforations(),
-                ),
-                Positioned.fill(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 22),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        widget.photo != null
-                            ? Image(
-                                image: widget.photo!,
-                                fit: BoxFit.cover,
-                              )
-                            : Container(
-                                color: const Color(0xFF231B18),
-                                child: Icon(
-                                  Icons.photo_camera_outlined,
-                                  color: AppColors.gold.withOpacity(0.4),
-                                  size: 26,
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 0, left: 0, right: 0,
+                    child: _FilmPerforations(),
+                  ),
+                  Positioned(
+                    bottom: 0, left: 0, right: 0,
+                    child: _FilmPerforations(),
+                  ),
+                  Positioned.fill(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 22),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          widget.photo != null
+                              ? Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: AppColors.gold.withOpacity(0.4),
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  child: Image(
+                                    image: widget.photo!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : Container(
+                                  color: const Color(0xFF231B18),
+                                  child: Icon(
+                                    Icons.photo_camera_outlined,
+                                    color: AppColors.gold.withOpacity(0.4),
+                                    size: 26,
+                                  ),
+                                ),
+                          AnimatedOpacity(
+                            duration: const Duration(milliseconds: 300),
+                            opacity: _hovered ? 1.0 : 0.0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.72),
+                                  ],
                                 ),
                               ),
-                        AnimatedOpacity(
-                          duration: const Duration(milliseconds: 300),
-                          opacity: _hovered ? 1.0 : 0.0,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withOpacity(0.72),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(10),
+                                    child: Text(
+                                      widget.caption,
+                                      style: GoogleFonts.jost(
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.w300,
+                                        letterSpacing: 1.8,
+                                        color: AppColors.cream,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Text(
-                                    widget.caption,
-                                    style: GoogleFonts.jost(
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w300,
-                                      letterSpacing: 1.8,
-                                      color: AppColors.cream,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
+                          ),
+                          Positioned(
+                            top: 6,
+                            right: 8,
+                            child: Text(
+                              '0${widget.index + 1}',
+                              style: GoogleFonts.jost(
+                                fontSize: 7,
+                                fontWeight: FontWeight.w200,
+                                letterSpacing: 1,
+                                color: AppColors.gold.withOpacity(0.6),
+                              ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          top: 6,
-                          right: 8,
-                          child: Text(
-                            '0${widget.index + 1}',
-                            style: GoogleFonts.jost(
-                              fontSize: 7,
-                              fontWeight: FontWeight.w200,
-                              letterSpacing: 1,
-                              color: AppColors.gold.withOpacity(0.6),
-                            ),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

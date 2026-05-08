@@ -109,9 +109,9 @@ class _HeroSectionState extends State<HeroSection>
                 _FadeUp(
                   delay: 500,
                   child: Text(
-                    'Nathan',
+                    'My baby',
                     style: GoogleFonts.cormorantGaramond(
-                      fontSize: size.width < 600 ? 72 : 110,
+                      fontSize: size.width < 600 ? 52 : 110,
                       fontWeight: FontWeight.w300,
                       color: AppColors.cream,
                       height: 0.95,
@@ -122,15 +122,19 @@ class _HeroSectionState extends State<HeroSection>
 
                 _FadeUp(
                   delay: 620,
-                  child: Text(
-                    '& Frenzy',
-                    style: GoogleFonts.cormorantGaramond(
-                      fontSize: size.width < 600 ? 48 : 72,
-                      fontWeight: FontWeight.w300,
-                      fontStyle: FontStyle.italic,
-                      color: AppColors.roseLight,
-                      height: 1.1,
-                      letterSpacing: 2,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Frenzy Anne Espiritu',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.cormorantGaramond(
+                        fontSize: size.width < 600 ? 34 : 72,
+                        fontWeight: FontWeight.w300,
+                        fontStyle: FontStyle.italic,
+                        color: AppColors.roseLight,
+                        height: 1.1,
+                        letterSpacing: 2,
+                      ),
                     ),
                   ),
                 ),

@@ -4,6 +4,7 @@ import '../app.dart';
 
 class NavBar extends StatelessWidget {
   final bool isScrolled;
+  final int currentPage;
   final VoidCallback onCountdown;
   final VoidCallback onGallery;
   final VoidCallback onVideos;
@@ -13,6 +14,7 @@ class NavBar extends StatelessWidget {
   const NavBar({
     super.key,
     required this.isScrolled,
+    required this.currentPage,
     required this.onCountdown,
     required this.onGallery,
     required this.onVideos,
@@ -27,24 +29,29 @@ class NavBar extends StatelessWidget {
       color: isScrolled
           ? AppColors.charcoal.withOpacity(0.92)
           : Colors.transparent,
-      padding:
-          const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+      padding: EdgeInsets.symmetric(
+        vertical: 12,
+        horizontal: MediaQuery.of(context).size.width < 600 ? 8 : 32,
+      ),
       child: SafeArea(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _NavLink('Countdown', onCountdown),
-            const SizedBox(width: 28),
-            _NavLink('Gallery', onGallery),
-            const SizedBox(width: 28),
-            _NavLink('Videos', onVideos),
-            const SizedBox(width: 28),
-            _NavLink('Timeline', onTimeline),
-            const SizedBox(width: 28),
-            _NavLink('Letter', onLetter),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _NavLink('Countdown', onCountdown, isActive: currentPage == 1),
+                  _NavLink('Gallery', onGallery, isActive: currentPage == 2),
+                  _NavLink('Videos', onVideos, isActive: currentPage == 3),
+                  _NavLink('Timeline', onTimeline, isActive: currentPage == 4),
+                  _NavLink('Letter', onLetter, isActive: currentPage == 5),
+                ],
+              ),
+            ),
           ],
         ),
-      ),
+      ), 
     );
   }
 }
@@ -52,7 +59,8 @@ class NavBar extends StatelessWidget {
 class _NavLink extends StatefulWidget {
   final String label;
   final VoidCallback onTap;
-  const _NavLink(this.label, this.onTap);
+  final bool isActive;
+  const _NavLink(this.label, this.onTap, {this.isActive = false});
 
   @override
   State<_NavLink> createState() => _NavLinkState();
@@ -71,12 +79,19 @@ class _NavLinkState extends State<_NavLink> {
         child: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 200),
           style: GoogleFonts.jost(
-            fontSize: 11,
-            fontWeight: FontWeight.w200,
-            letterSpacing: 3.0,
-            color: _hovered
+            fontSize: 10,
+            fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.w300,
+            letterSpacing: 2.5,
+            color: widget.isActive
                 ? AppColors.gold
-                : AppColors.cream.withOpacity(0.55),
+                : _hovered
+                    ? AppColors.cream
+                    : AppColors.cream.withOpacity(0.65),
+            decoration: widget.isActive
+                ? TextDecoration.underline
+                : TextDecoration.none,
+            decorationColor: AppColors.rose,
+            decorationThickness: 2.0,
           ),
           child: Text(widget.label.toUpperCase()),
         ),

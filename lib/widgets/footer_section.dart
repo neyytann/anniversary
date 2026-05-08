@@ -106,7 +106,7 @@ class FooterSection extends StatelessWidget {
 
                 // Date
                 Text(
-                  'JUNE 4, 2025  —  FOREVER',
+                  'JUNE 4, 2025  —  LIFETIME',
                   style: GoogleFonts.jost(
                     fontSize: 10, fontWeight: FontWeight.w200,
                     letterSpacing: 4.5, color: AppColors.muted,

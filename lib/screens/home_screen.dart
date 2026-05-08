@@ -81,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Navigation bar
           NavBar(
             isScrolled: _currentPage > 0,
+            currentPage: _currentPage,
             onCountdown:    () => _goToPage(1),
             onGallery:      () => _goToPage(2),
             onVideos:       () => _goToPage(3),

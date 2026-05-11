@@ -114,10 +114,10 @@ class _CountdownSectionState extends State<CountdownSection> {
                     Text(
                       'MARK YOUR CALENDAR',
                       style: GoogleFonts.jost(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w200,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w300,
                         letterSpacing: 5.5,
-                        color: AppColors.gold,
+                        color: const Color.fromARGB(255, 0, 0, 0),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -210,13 +210,13 @@ class _CountdownSectionState extends State<CountdownSection> {
                         horizontal: 32, vertical: 14),
                     decoration: BoxDecoration(
                       border: Border.all(
-                          color: AppColors.gold.withOpacity(0.5), width: 0.5),
+                          color: AppColors.gold.withOpacity(0.7), width: 0.5),
                     ),
                     child: Text(
                       'JUNE  4,  2026',
                       style: GoogleFonts.jost(
                         fontSize: 11,
-                        fontWeight: FontWeight.w200,
+                        fontWeight: FontWeight.w300,
                         letterSpacing: 6,
                         color: AppColors.roseDeep,
                       ),
@@ -398,9 +398,9 @@ class _CountUnit extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.jost(
               fontSize: 8.5,
-              fontWeight: FontWeight.w200,
+              fontWeight: FontWeight.w400,
               letterSpacing: 3,
-              color: AppColors.muted,
+              color: const Color.fromARGB(255, 66, 62, 62),
             ),
           ),
         ],

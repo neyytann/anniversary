@@ -6,12 +6,12 @@ class GallerySection extends StatelessWidget {
   const GallerySection({super.key});
 
   static const _captions = [
-    'Our first photo',
-    'A quiet moment',
-    'Adventures together',
-    'Laughing all day',
-    'Just us two',
-    'Forever favorite',
+    'Our first photo: Frenzy & Nathan',
+    'First departure of Nathan: December 2025',
+    'Cutie patotie',
+    'Date at Mang Inasal',
+    'Morning departure: April 2026',
+    'Forever favorite: Mirror shot',
   ];
 
   static const _photos = [
@@ -53,7 +53,7 @@ class GallerySection extends StatelessWidget {
                       'OUR MOMENTS',
                       style: GoogleFonts.jost(
                         fontSize: 9,
-                        fontWeight: FontWeight.w200,
+                        fontWeight: FontWeight.w400,
                         letterSpacing: 6,
                         color: AppColors.gold,
                       ),
@@ -105,13 +105,13 @@ class GallerySection extends StatelessWidget {
                       ),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 20, top: 12),
+                padding: const EdgeInsets.only(bottom: 30, top: 12),
                 child: Text(
                   '✦  our moments  ✦',
                   style: GoogleFonts.cormorantGaramond(
-                    fontSize: 11,
+                    fontSize: 13,
                     fontStyle: FontStyle.italic,
-                    color: AppColors.muted.withOpacity(0.6),
+                    color: const Color.fromARGB(255, 24, 23, 23).withOpacity(0.6),
                   ),
                   textAlign: TextAlign.center,
                 ),

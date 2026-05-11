@@ -182,9 +182,9 @@ class LetterSection extends StatelessWidget {
                       Text(
                         'FROM THE HEART',
                         style: GoogleFonts.jost(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w200,
-                          letterSpacing: 5.5,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 3.5,
                           color: AppColors.gold,
                         ),
                         textAlign: TextAlign.center,

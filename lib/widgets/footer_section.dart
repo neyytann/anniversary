@@ -56,8 +56,8 @@ class FooterSection extends StatelessWidget {
                 Text(
                   'WITH ALL MY HEART',
                   style: GoogleFonts.jost(
-                    fontSize: 9, fontWeight: FontWeight.w200,
-                    letterSpacing: 5, color: AppColors.gold.withOpacity(0.6),
+                    fontSize: 12, fontWeight: FontWeight.w400,
+                    letterSpacing: 5, color: AppColors.gold.withOpacity(0.8),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -92,13 +92,13 @@ class FooterSection extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(width: 48, height: 0.5,
+                    Container(width: 48, height: 2,
                         color: AppColors.muted.withOpacity(0.4)),
                     const SizedBox(width: 14),
                     Icon(Icons.favorite,
                         color: AppColors.rose.withOpacity(0.5), size: 14),
                     const SizedBox(width: 14),
-                    Container(width: 48, height: 0.5,
+                    Container(width: 48, height: 2,
                         color: AppColors.muted.withOpacity(0.4)),
                   ],
                 ),
@@ -108,8 +108,8 @@ class FooterSection extends StatelessWidget {
                 Text(
                   'JUNE 4, 2025  —  LIFETIME',
                   style: GoogleFonts.jost(
-                    fontSize: 10, fontWeight: FontWeight.w200,
-                    letterSpacing: 4.5, color: AppColors.muted,
+                    fontSize: 12, fontWeight: FontWeight.w600,
+                    letterSpacing: 4.5, color: const Color.fromARGB(255, 126, 114, 106),
                   ),
                   textAlign: TextAlign.center,
                 ),

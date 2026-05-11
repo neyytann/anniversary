@@ -130,7 +130,7 @@ class _TimelineSectionState extends State<TimelineSection>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: isMobile ? 72 : 80),
+                SizedBox(height: isMobile ? 72 : 64),
 
                 // Label
                 Text(
@@ -160,24 +160,27 @@ class _TimelineSectionState extends State<TimelineSection>
                       TextSpan(
                         text: 'story',
                         style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: AppColors.rose),
+                            fontStyle: FontStyle.italic, color: AppColors.rose),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: isMobile ? 36 : 44),
+                SizedBox(height: isMobile ? 36 : 24),
 
                 // Timeline
                 if (isMobile)
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: size.height * 0.75,
-                  ),
-                  child: _mobileTimeline(),
-                )
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: size.height * 0.75),
+                    child: _mobileTimeline(),
+                  )
                 else
-                  Expanded(child: _desktopTimeline(size)),
+                  Expanded(
+                    child: OverflowBox(
+                      alignment: Alignment.topCenter,
+                      maxHeight: double.infinity,
+                      child: _desktopTimeline(size),
+                    ),
+                  ),
 
                 SizedBox(height: isMobile ? 40 : 0),
               ],
@@ -223,50 +226,52 @@ class _TimelineSectionState extends State<TimelineSection>
   }
 
   Widget _desktopTimeline(Size size) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: List.generate(_milestones.length, (i) {
-        final m = _milestones[i];
-        final isLeft = i.isEven;
-        return AnimatedBuilder(
-          animation: _ctrl,
-          builder: (context, child) => FadeTransition(
-            opacity: _opacities[i],
-            child: SlideTransition(position: _offsets[i], child: child),
-          ),
-          child: SizedBox(
-            width: double.infinity,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: isLeft
-                  ? [
-                      Expanded(
-                          child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 36),
-                          child: _itemContent(m, TextAlign.right),
-                        ),
-                      )),
-                      _dot(),
-                      const Expanded(child: SizedBox()),
-                    ]
-                  : [
-                      const Expanded(child: SizedBox()),
-                      _dot(),
-                      Expanded(
-                          child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 36),
-                          child: _itemContent(m, TextAlign.left),
-                        ),
-                      )),
-                    ],
+    return ClipRect(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(_milestones.length, (i) {
+          final m = _milestones[i];
+          final isLeft = i.isEven;
+          return AnimatedBuilder(
+            animation: _ctrl,
+            builder: (context, child) => FadeTransition(
+              opacity: _opacities[i],
+              child: SlideTransition(position: _offsets[i], child: child),
             ),
-          ),
-        );
-      }),
+            child: SizedBox(
+              width: double.infinity,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: isLeft
+                    ? [
+                        Expanded(
+                            child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 36),
+                            child: _itemContent(m, TextAlign.right),
+                          ),
+                        )),
+                        _dot(),
+                        const Expanded(child: SizedBox()),
+                      ]
+                    : [
+                        const Expanded(child: SizedBox()),
+                        _dot(),
+                        Expanded(
+                            child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 36),
+                            child: _itemContent(m, TextAlign.left),
+                          ),
+                        )),
+                      ],
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 
@@ -304,7 +309,7 @@ class _TimelineSectionState extends State<TimelineSection>
           textAlign: align,
           style: GoogleFonts.cormorantGaramond(
             fontSize: 22,
-            fontWeight: FontWeight.w400,   // bumped from w300 → w400
+            fontWeight: FontWeight.w400, // bumped from w300 → w400
             color: AppColors.cream,
             height: 1.2,
           ),
@@ -314,10 +319,10 @@ class _TimelineSectionState extends State<TimelineSection>
           m.description,
           textAlign: align,
           style: GoogleFonts.cormorantGaramond(
-            fontSize: 15,                               // bumped from 14 → 15
-            fontWeight: FontWeight.w400,                // bumped from w300 → w400
+            fontSize: 15, // bumped from 14 → 15
+            fontWeight: FontWeight.w400, // bumped from w300 → w400
             fontStyle: FontStyle.italic,
-            color: AppColors.cream.withOpacity(0.78),  // was AppColors.muted
+            color: AppColors.cream.withOpacity(0.78), // was AppColors.muted
             height: 1.65,
           ),
         ),

@@ -112,9 +112,9 @@ class VideoGallerySection extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 20, top: 12),
                 child: Text(
-                  '✦  our memories ✦',
+                  '✦  enjoy the film ✦',
                   style: GoogleFonts.cormorantGaramond(
-                    fontSize: 11,
+                    fontSize: 13,
                     fontStyle: FontStyle.italic,
                     color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.6),
                   ),

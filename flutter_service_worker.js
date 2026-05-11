@@ -36,8 +36,8 @@ const RESOURCES = {"assets/assets/images/bebe3.jpg": "dc96144c43f13f7a674b9314b3
 "canvaskit/skwasm_heavy.wasm": "4400a7d92341804dc8831ace18f6a0de",
 "canvaskit/skwasm.js": "5d4f9263ec93efeb022bb14a3881d240",
 "flutter.js": "383e55f7f3cce5be08fcf1f3881f585c",
-"flutter_bootstrap.js": "859c6711e78a4aa4793f8b3b7d13aba2",
-"main.dart.js": "b964dde4999d375d57405d63873feb1c",
+"flutter_bootstrap.js": "c4a74adc04a25ff26e13d58a5c04422c",
+"main.dart.js": "dc2927a8a2e49354c5a6c95c2f102f81",
 "version.json": "23d80a0fa83f47bf66bb5e5de88aa95b"};
 // The application shell files that are downloaded before a service worker can
 // start.

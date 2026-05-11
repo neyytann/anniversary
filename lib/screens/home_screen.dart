@@ -22,13 +22,21 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
 
   int _currentPage = 0;
-  Timer? _snapTimer;
   bool _isSnapping = false;
+
+  // Touch tracking
+  double? _dragStartY;
+  double? _lastDragY;
+  double _dragStartOffset = 0;
+  double _dragVelocity = 0;
 
   static const _sectionCount = 7;
   static const _sectionLabels = [
     'Home', 'Countdown', 'Gallery', 'Videos', 'Timeline', 'Letter', 'Forever',
   ];
+
+  static const double _swipeThreshold = 40.0;
+  static const double _velocityThreshold = 0.3;
 
   @override
   void initState() {
@@ -38,7 +46,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _snapTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -47,51 +54,92 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onScroll() {
     if (_isSnapping) return;
-
-    // Update current page indicator while scrolling
-    final page = (_scrollController.offset / _pageHeight).round().clamp(0, _sectionCount - 1);
+    final page = (_scrollController.offset / _pageHeight)
+        .round()
+        .clamp(0, _sectionCount - 1);
     if (page != _currentPage) {
       setState(() => _currentPage = page);
     }
-
-    // Debounce: snap after user stops scrolling for 120ms
-    _snapTimer?.cancel();
-    _snapTimer = Timer(const Duration(milliseconds: 120), _snapToNearest);
-  }
-
-  void _snapToNearest() {
-    if (!_scrollController.hasClients || _isSnapping) return;
-
-    final offset = _scrollController.offset;
-    final page = (offset / _pageHeight).round().clamp(0, _sectionCount - 1);
-    final target = page * _pageHeight;
-
-    if ((offset - target).abs() < 1.0) return; // already snapped
-
-    _isSnapping = true;
-    _scrollController
-        .animateTo(
-          target,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeOutCubic,
-        )
-        .then((_) => _isSnapping = false);
-
-    setState(() => _currentPage = page);
   }
 
   void _goToPage(int page) {
-    _snapTimer?.cancel();
+    if (_isSnapping) return;
+    final clamped = page.clamp(0, _sectionCount - 1);
     _isSnapping = true;
-    final target = page * _pageHeight;
     _scrollController
         .animateTo(
-          target,
-          duration: const Duration(milliseconds: 700),
-          curve: Curves.easeInOut,
+          clamped * _pageHeight,
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeOutCubic,
         )
-        .then((_) => _isSnapping = false);
-    setState(() => _currentPage = page);
+        .then((_) {
+      _isSnapping = false;
+      setState(() => _currentPage = clamped);
+    });
+    setState(() => _currentPage = clamped);
+  }
+
+  // ── Touch handlers ──────────────────────────────────────────────────────────
+
+  void _onPointerDown(PointerDownEvent event) {
+    if (event.kind != PointerDeviceKind.touch) return;
+    _dragStartY = event.position.dy;
+    _lastDragY = event.position.dy;
+    _dragStartOffset = _scrollController.offset;
+    _dragVelocity = 0;
+    _isSnapping = false;
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (event.kind != PointerDeviceKind.touch) return;
+    if (_dragStartY == null) return;
+
+    // Track velocity for all pages including timeline
+    if (_lastDragY != null) {
+      _dragVelocity = (_lastDragY! - event.position.dy);
+    }
+    _lastDragY = event.position.dy;
+
+    // On timeline page, don't move the page — inner list handles it
+    if (_currentPage == 4) return;
+
+    final delta = _dragStartY! - event.position.dy;
+    final newOffset = (_dragStartOffset + delta)
+        .clamp(0.0, _pageHeight * (_sectionCount - 1));
+    _scrollController.jumpTo(newOffset);
+  }
+
+  void _onPointerUp(PointerUpEvent event) {
+    if (event.kind != PointerDeviceKind.touch) return;
+    if (_dragStartY == null) return;
+
+    final totalDrag = _dragStartY! - event.position.dy;
+    final absVelocity = _dragVelocity.abs();
+
+    _dragStartY = null;
+    _lastDragY = null;
+
+    if (absVelocity > _velocityThreshold || totalDrag.abs() > _swipeThreshold) {
+      if (totalDrag > 0) {
+        _goToPage(_currentPage + 1);
+      } else {
+        _goToPage(_currentPage - 1);
+      }
+    } else {
+      // Snap back to current page
+      _goToPage(_currentPage);
+    }
+  }
+
+  // ── Mouse wheel ─────────────────────────────────────────────────────────────
+
+  void _onPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent || _isSnapping) return;
+    if (event.scrollDelta.dy > 0) {
+      _goToPage(_currentPage + 1);
+    } else if (event.scrollDelta.dy < 0) {
+      _goToPage(_currentPage - 1);
+    }
   }
 
   @override
@@ -100,20 +148,14 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.charcoal,
       body: Stack(
         children: [
-          // Scrollable sections
           Listener(
-            // Smooth mouse-wheel scrolling — don't block, just let it flow
-            onPointerSignal: (event) {
-              if (event is PointerScrollEvent && !_isSnapping) {
-                final newOffset = (_scrollController.offset + event.scrollDelta.dy)
-                    .clamp(0.0, _pageHeight * (_sectionCount - 1));
-                _scrollController.jumpTo(newOffset);
-              }
-            },
+            onPointerSignal: _onPointerSignal,
+            onPointerDown: _onPointerDown,
+            onPointerMove: _onPointerMove,
+            onPointerUp: _onPointerUp,
             child: SingleChildScrollView(
               controller: _scrollController,
               physics: const NeverScrollableScrollPhysics(),
-              scrollDirection: Axis.vertical,
               child: Builder(
                 builder: (context) {
                   final h = MediaQuery.of(context).size.height;
@@ -144,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onLetter:    () => _goToPage(5),
           ),
 
-          // Dot indicators (right side)
+          // Dot indicators
           Positioned(
             right: 20,
             top: 0,

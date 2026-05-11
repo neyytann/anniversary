@@ -14,7 +14,7 @@ const _milestones = [
       'A very special date together — where every detour became a favorite memory and every laugh echoed a little longer.'),
   _Milestone('January 2026', '2nd time we met in your hometown.',
       'Since the first time feels short, I came back to see and bond with you again.'),
-  _Milestone('April 2026', '3rd meet-up together ',
+  _Milestone('April 2026', '3rd meet-up together',
       'We\'ve made a lot of happy memories together. So much fun and love.'),
   _Milestone('June 4, 2026', 'One whole year ♡',
       'Three hundred sixty-five days of choosing each other. Here\'s to forever feeling just like this.'),
@@ -33,9 +33,22 @@ class _TimelineSectionState extends State<TimelineSection>
   late List<Animation<double>> _opacities;
   late List<Animation<Offset>> _offsets;
 
+  final ScrollController _timelineScroll = ScrollController();
+  bool _timelineAtBottom = false;
+
   @override
   void initState() {
     super.initState();
+
+    _timelineScroll.addListener(() {
+      if (!_timelineScroll.hasClients) return;
+      final atBottom = _timelineScroll.offset >=
+          _timelineScroll.position.maxScrollExtent - 4;
+      if (atBottom != _timelineAtBottom) {
+        setState(() => _timelineAtBottom = atBottom);
+      }
+    });
+
     _ctrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 1200));
 
@@ -68,6 +81,7 @@ class _TimelineSectionState extends State<TimelineSection>
 
   @override
   void dispose() {
+    _timelineScroll.dispose();
     _ctrl.dispose();
     super.dispose();
   }
@@ -92,7 +106,7 @@ class _TimelineSectionState extends State<TimelineSection>
                   colors: [
                     Color(0xFF332620),
                     AppColors.charcoal,
-                    Color(0xFF251C18)
+                    Color(0xFF251C18),
                   ],
                   stops: [0.0, 0.5, 1.0],
                 ),
@@ -100,7 +114,7 @@ class _TimelineSectionState extends State<TimelineSection>
             ),
           ),
 
-          // Decorative vertical line
+          // Decorative vertical line (desktop only)
           if (!isMobile)
             Positioned(
               left: size.width / 2,
@@ -160,7 +174,8 @@ class _TimelineSectionState extends State<TimelineSection>
                       TextSpan(
                         text: 'story',
                         style: TextStyle(
-                            fontStyle: FontStyle.italic, color: AppColors.rose),
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.rose),
                       ),
                     ],
                   ),
@@ -169,9 +184,11 @@ class _TimelineSectionState extends State<TimelineSection>
 
                 // Timeline
                 if (isMobile)
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: size.height * 0.75),
-                    child: _mobileTimeline(),
+                  Expanded(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (n) => !_timelineAtBottom,
+                      child: _mobileTimeline(),
+                    ),
                   )
                 else
                   Expanded(
@@ -182,7 +199,7 @@ class _TimelineSectionState extends State<TimelineSection>
                     ),
                   ),
 
-                SizedBox(height: isMobile ? 40 : 0),
+                SizedBox(height: isMobile ? 0 : 0),
               ],
             ),
           ),
@@ -192,8 +209,28 @@ class _TimelineSectionState extends State<TimelineSection>
   }
 
   Widget _mobileTimeline() {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
+  return GestureDetector(
+    onVerticalDragUpdate: (details) {
+      if (!_timelineScroll.hasClients) return;
+
+      final atTop = _timelineScroll.offset <= 0;
+      final atBottom = _timelineAtBottom;
+
+      // At bottom swiping up — stop inner scroll, let parent take over
+      if (atBottom && details.delta.dy < 0) return;
+      // At top swiping down — stop inner scroll, let parent take over
+      if (atTop && details.delta.dy > 0) return;
+
+      final newOffset = (_timelineScroll.offset - details.delta.dy)
+          .clamp(0.0, _timelineScroll.position.maxScrollExtent);
+      _timelineScroll.jumpTo(newOffset);
+    },
+    onVerticalDragEnd: (details) {
+      // Nothing needed — home_screen's _onPointerUp handles page snap
+    },
+    child: SingleChildScrollView(
+      controller: _timelineScroll,
+      physics: const NeverScrollableScrollPhysics(),
       child: Column(
         children: List.generate(_milestones.length, (i) {
           final m = _milestones[i];
@@ -208,12 +245,7 @@ class _TimelineSectionState extends State<TimelineSection>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    children: [
-                      const SizedBox(height: 5),
-                      _dot(),
-                    ],
-                  ),
+                  Column(children: [const SizedBox(height: 5), _dot()]),
                   const SizedBox(width: 20),
                   Expanded(child: _itemContent(m, TextAlign.left)),
                 ],
@@ -222,8 +254,9 @@ class _TimelineSectionState extends State<TimelineSection>
           );
         }),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _desktopTimeline(Size size) {
     return ClipRect(
@@ -245,13 +278,14 @@ class _TimelineSectionState extends State<TimelineSection>
                 children: isLeft
                     ? [
                         Expanded(
-                            child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 36),
-                            child: _itemContent(m, TextAlign.right),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 36),
+                              child: _itemContent(m, TextAlign.right),
+                            ),
                           ),
-                        )),
+                        ),
                         _dot(),
                         const Expanded(child: SizedBox()),
                       ]
@@ -259,13 +293,14 @@ class _TimelineSectionState extends State<TimelineSection>
                         const Expanded(child: SizedBox()),
                         _dot(),
                         Expanded(
-                            child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 36),
-                            child: _itemContent(m, TextAlign.left),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 36),
+                              child: _itemContent(m, TextAlign.left),
+                            ),
                           ),
-                        )),
+                        ),
                       ],
               ),
             ),
@@ -309,7 +344,7 @@ class _TimelineSectionState extends State<TimelineSection>
           textAlign: align,
           style: GoogleFonts.cormorantGaramond(
             fontSize: 22,
-            fontWeight: FontWeight.w400, // bumped from w300 → w400
+            fontWeight: FontWeight.w400,
             color: AppColors.cream,
             height: 1.2,
           ),
@@ -319,10 +354,10 @@ class _TimelineSectionState extends State<TimelineSection>
           m.description,
           textAlign: align,
           style: GoogleFonts.cormorantGaramond(
-            fontSize: 15, // bumped from 14 → 15
-            fontWeight: FontWeight.w400, // bumped from w300 → w400
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
             fontStyle: FontStyle.italic,
-            color: AppColors.cream.withOpacity(0.78), // was AppColors.muted
+            color: AppColors.cream.withOpacity(0.78),
             height: 1.65,
           ),
         ),

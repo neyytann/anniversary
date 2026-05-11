@@ -21,13 +21,14 @@ const _milestones = [
 ];
 
 class TimelineSection extends StatefulWidget {
-  const TimelineSection({super.key});
+  final void Function(bool atTop, bool atBottom)? onBoundaryChanged;
+  const TimelineSection({super.key, this.onBoundaryChanged});
 
   @override
-  State<TimelineSection> createState() => _TimelineSectionState();
+  State<TimelineSection> createState() => TimelineSectionState();
 }
 
-class _TimelineSectionState extends State<TimelineSection>
+class TimelineSectionState extends State<TimelineSection>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late List<Animation<double>> _opacities;
@@ -35,6 +36,11 @@ class _TimelineSectionState extends State<TimelineSection>
 
   final ScrollController _timelineScroll = ScrollController();
   bool _timelineAtBottom = false;
+
+  // How many consecutive swipes have hit the current boundary
+  int _boundaryHitCount = 0;
+  // Which boundary was last hit: 'top', 'bottom', or ''
+  String _lastBoundaryHit = '';
 
   @override
   void initState() {
@@ -44,9 +50,11 @@ class _TimelineSectionState extends State<TimelineSection>
       if (!_timelineScroll.hasClients) return;
       final atBottom = _timelineScroll.offset >=
           _timelineScroll.position.maxScrollExtent - 4;
+      final atTop = _timelineScroll.offset <= 0;
       if (atBottom != _timelineAtBottom) {
         setState(() => _timelineAtBottom = atBottom);
       }
+      widget.onBoundaryChanged?.call(atTop, atBottom);
     });
 
     _ctrl = AnimationController(
@@ -84,6 +92,39 @@ class _TimelineSectionState extends State<TimelineSection>
     _timelineScroll.dispose();
     _ctrl.dispose();
     super.dispose();
+  }
+
+  /// Called by home_screen after each pointer-up on the timeline page.
+  /// Returns true if the page should navigate away, false if not yet.
+  bool checkBoundaryAndShouldNavigate(bool swipingUp) {
+    final hitBottom = swipingUp && _timelineAtBottom;
+    final hitTop = !swipingUp && (_timelineScroll.hasClients && _timelineScroll.offset <= 0);
+
+    final boundary = hitBottom ? 'bottom' : hitTop ? 'top' : '';
+
+    if (boundary.isEmpty) {
+      // Not at a boundary — reset
+      _boundaryHitCount = 0;
+      _lastBoundaryHit = '';
+      return false;
+    }
+
+    if (boundary == _lastBoundaryHit) {
+      _boundaryHitCount++;
+    } else {
+      // Switched boundary or fresh hit
+      _boundaryHitCount = 1;
+      _lastBoundaryHit = boundary;
+    }
+
+    if (_boundaryHitCount >= 2) {
+      // Reset so it doesn't keep navigating on every subsequent swipe
+      _boundaryHitCount = 0;
+      _lastBoundaryHit = '';
+      return true;
+    }
+
+    return false;
   }
 
   @override
@@ -146,7 +187,6 @@ class _TimelineSectionState extends State<TimelineSection>
               children: [
                 SizedBox(height: isMobile ? 72 : 64),
 
-                // Label
                 Text(
                   'HOW IT ALL BEGAN',
                   style: GoogleFonts.jost(
@@ -159,7 +199,6 @@ class _TimelineSectionState extends State<TimelineSection>
                 ),
                 const SizedBox(height: 16),
 
-                // Title
                 RichText(
                   textAlign: TextAlign.center,
                   text: TextSpan(
@@ -182,14 +221,8 @@ class _TimelineSectionState extends State<TimelineSection>
                 ),
                 SizedBox(height: isMobile ? 36 : 24),
 
-                // Timeline
                 if (isMobile)
-                  Expanded(
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: (n) => !_timelineAtBottom,
-                      child: _mobileTimeline(),
-                    ),
-                  )
+                  Expanded(child: _mobileTimeline())
                 else
                   Expanded(
                     child: OverflowBox(
@@ -198,8 +231,6 @@ class _TimelineSectionState extends State<TimelineSection>
                       child: _desktopTimeline(size),
                     ),
                   ),
-
-                SizedBox(height: isMobile ? 0 : 0),
               ],
             ),
           ),
@@ -209,54 +240,56 @@ class _TimelineSectionState extends State<TimelineSection>
   }
 
   Widget _mobileTimeline() {
-  return GestureDetector(
-    onVerticalDragUpdate: (details) {
-      if (!_timelineScroll.hasClients) return;
+    return Listener(
+      onPointerMove: (event) {
+        if (!_timelineScroll.hasClients) return;
 
-      final atTop = _timelineScroll.offset <= 0;
-      final atBottom = _timelineAtBottom;
+        final atTop = _timelineScroll.offset <= 0;
+        final atBottom = _timelineAtBottom;
+        final dy = event.delta.dy;
 
-      // At bottom swiping up — stop inner scroll, let parent take over
-      if (atBottom && details.delta.dy < 0) return;
-      // At top swiping down — stop inner scroll, let parent take over
-      if (atTop && details.delta.dy > 0) return;
+        // At boundaries — do nothing, let home_screen's Listener take over
+        if (atBottom && dy < 0) return;
+        if (atTop && dy > 0) return;
 
-      final newOffset = (_timelineScroll.offset - details.delta.dy)
-          .clamp(0.0, _timelineScroll.position.maxScrollExtent);
-      _timelineScroll.jumpTo(newOffset);
-    },
-    onVerticalDragEnd: (details) {
-      // Nothing needed — home_screen's _onPointerUp handles page snap
-    },
-    child: SingleChildScrollView(
-      controller: _timelineScroll,
-      physics: const NeverScrollableScrollPhysics(),
-      child: Column(
-        children: List.generate(_milestones.length, (i) {
-          final m = _milestones[i];
-          return AnimatedBuilder(
-            animation: _ctrl,
-            builder: (context, child) => FadeTransition(
-              opacity: _opacities[i],
-              child: SlideTransition(position: _offsets[i], child: child),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 24, right: 24, bottom: 32),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Column(children: [const SizedBox(height: 5), _dot()]),
-                  const SizedBox(width: 20),
-                  Expanded(child: _itemContent(m, TextAlign.left)),
-                ],
-              ),
-            ),
-          );
-        }),
+        // Otherwise consume the drag internally
+        final newOffset = (_timelineScroll.offset - dy)
+            .clamp(0.0, _timelineScroll.position.maxScrollExtent);
+        _timelineScroll.jumpTo(newOffset);
+      },
+      child: SingleChildScrollView(
+        controller: _timelineScroll,
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            ...List.generate(_milestones.length, (i) {
+              final m = _milestones[i];
+              return AnimatedBuilder(
+                animation: _ctrl,
+                builder: (context, child) => FadeTransition(
+                  opacity: _opacities[i],
+                  child: SlideTransition(position: _offsets[i], child: child),
+                ),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.only(left: 24, right: 24, bottom: 32),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(children: [const SizedBox(height: 5), _dot()]),
+                      const SizedBox(width: 20),
+                      Expanded(child: _itemContent(m, TextAlign.left)),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _desktopTimeline(Size size) {
     return ClipRect(

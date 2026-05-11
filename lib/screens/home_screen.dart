@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey<TimelineSectionState> _timelineKey = GlobalKey();
 
   int _currentPage = 0;
   bool _isSnapping = false;
@@ -28,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double? _lastDragY;
   double _dragStartOffset = 0;
   double _dragVelocity = 0;
+  bool _timelineConsumedDrag = false;
 
   static const _sectionCount = 7;
   static const _sectionLabels = [
@@ -87,20 +89,22 @@ class _HomeScreenState extends State<HomeScreen> {
     _dragStartOffset = _scrollController.offset;
     _dragVelocity = 0;
     _isSnapping = false;
+    _timelineConsumedDrag = false;
   }
 
   void _onPointerMove(PointerMoveEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
     if (_dragStartY == null) return;
 
-    // Track velocity for all pages including timeline
     if (_lastDragY != null) {
       _dragVelocity = (_lastDragY! - event.position.dy);
     }
     _lastDragY = event.position.dy;
 
-    // On timeline page, don't move the page — inner list handles it
-    if (_currentPage == 4) return;
+    if (_currentPage == 4) {
+      _timelineConsumedDrag = true;
+      return;
+    }
 
     final delta = _dragStartY! - event.position.dy;
     final newOffset = (_dragStartOffset + delta)
@@ -118,6 +122,27 @@ class _HomeScreenState extends State<HomeScreen> {
     _dragStartY = null;
     _lastDragY = null;
 
+    if (_timelineConsumedDrag) {
+      _timelineConsumedDrag = false;
+
+      final swipingUp = totalDrag > 0;   // finger up → next page
+      final hasMomentum = absVelocity > _velocityThreshold ||
+          totalDrag.abs() > _swipeThreshold;
+
+      if (hasMomentum) {
+        final shouldNavigate = _timelineKey.currentState
+            ?.checkBoundaryAndShouldNavigate(swipingUp) ?? false;
+
+        if (shouldNavigate) {
+          _goToPage(swipingUp ? _currentPage + 1 : _currentPage - 1);
+          return;
+        }
+      }
+
+      _goToPage(_currentPage);
+      return;
+    }
+
     if (absVelocity > _velocityThreshold || totalDrag.abs() > _swipeThreshold) {
       if (totalDrag > 0) {
         _goToPage(_currentPage + 1);
@@ -125,7 +150,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _goToPage(_currentPage - 1);
       }
     } else {
-      // Snap back to current page
       _goToPage(_currentPage);
     }
   }
@@ -134,6 +158,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onPointerSignal(PointerSignalEvent event) {
     if (event is! PointerScrollEvent || _isSnapping) return;
+    if (_currentPage == 4) {
+      final swipingUp = event.scrollDelta.dy > 0;
+      final shouldNavigate = _timelineKey.currentState
+          ?.checkBoundaryAndShouldNavigate(swipingUp) ?? false;
+      if (shouldNavigate) {
+        _goToPage(swipingUp ? _currentPage + 1 : _currentPage - 1);
+      }
+      return;
+    }
     if (event.scrollDelta.dy > 0) {
       _goToPage(_currentPage + 1);
     } else if (event.scrollDelta.dy < 0) {
@@ -164,7 +197,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(height: h, child: const CountdownSection()),
                       SizedBox(height: h, child: const GallerySection()),
                       SizedBox(height: h, child: const VideoGallerySection()),
-                      SizedBox(height: h, child: const TimelineSection()),
+                      SizedBox(
+                        height: h,
+                        child: TimelineSection(
+                          key: _timelineKey,
+                          onBoundaryChanged: (atTop, atBottom) {
+                          },
+                        ),
+                      ),
                       SizedBox(height: h, child: const LetterSection()),
                       SizedBox(height: h, child: const FooterSection()),
                     ],

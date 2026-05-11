@@ -34,28 +34,12 @@ class TimelineSectionState extends State<TimelineSection>
   late List<Animation<double>> _opacities;
   late List<Animation<Offset>> _offsets;
 
+  // We still keep the controller for boundary detection if needed by parent
   final ScrollController _timelineScroll = ScrollController();
-  bool _timelineAtBottom = false;
-
-  // How many consecutive swipes have hit the current boundary
-  int _boundaryHitCount = 0;
-  // Which boundary was last hit: 'top', 'bottom', or ''
-  String _lastBoundaryHit = '';
 
   @override
   void initState() {
     super.initState();
-
-    _timelineScroll.addListener(() {
-      if (!_timelineScroll.hasClients) return;
-      final atBottom = _timelineScroll.offset >=
-          _timelineScroll.position.maxScrollExtent - 4;
-      final atTop = _timelineScroll.offset <= 0;
-      if (atBottom != _timelineAtBottom) {
-        setState(() => _timelineAtBottom = atBottom);
-      }
-      widget.onBoundaryChanged?.call(atTop, atBottom);
-    });
 
     _ctrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 1200));
@@ -94,38 +78,8 @@ class TimelineSectionState extends State<TimelineSection>
     super.dispose();
   }
 
-  /// Called by home_screen after each pointer-up on the timeline page.
-  /// Returns true if the page should navigate away, false if not yet.
-  bool checkBoundaryAndShouldNavigate(bool swipingUp) {
-    final hitBottom = swipingUp && _timelineAtBottom;
-    final hitTop = !swipingUp && (_timelineScroll.hasClients && _timelineScroll.offset <= 0);
-
-    final boundary = hitBottom ? 'bottom' : hitTop ? 'top' : '';
-
-    if (boundary.isEmpty) {
-      // Not at a boundary — reset
-      _boundaryHitCount = 0;
-      _lastBoundaryHit = '';
-      return false;
-    }
-
-    if (boundary == _lastBoundaryHit) {
-      _boundaryHitCount++;
-    } else {
-      // Switched boundary or fresh hit
-      _boundaryHitCount = 1;
-      _lastBoundaryHit = boundary;
-    }
-
-    if (_boundaryHitCount >= 2) {
-      // Reset so it doesn't keep navigating on every subsequent swipe
-      _boundaryHitCount = 0;
-      _lastBoundaryHit = '';
-      return true;
-    }
-
-    return false;
-  }
+  // Keep this method in case parent still uses it
+  bool checkBoundaryAndShouldNavigate(bool swipingUp) => false;
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +88,7 @@ class TimelineSectionState extends State<TimelineSection>
 
     return Container(
       width: double.infinity,
-      constraints: BoxConstraints(minHeight: size.height),
+      height: size.height,                    // Full screen height
       child: Stack(
         children: [
           // Background
@@ -160,7 +114,7 @@ class TimelineSectionState extends State<TimelineSection>
             Positioned(
               left: size.width / 2,
               top: 160,
-              bottom: 40,
+              bottom: 80,
               child: Container(
                 width: 0.5,
                 decoration: BoxDecoration(
@@ -169,69 +123,66 @@ class TimelineSectionState extends State<TimelineSection>
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      AppColors.gold.withOpacity(0.3),
-                      AppColors.gold.withOpacity(0.3),
+                      AppColors.gold.withOpacity(0.35),
+                      AppColors.gold.withOpacity(0.35),
                       Colors.transparent,
                     ],
-                    stops: const [0.0, 0.1, 0.9, 1.0],
+                    stops: const [0.0, 0.08, 0.92, 1.0],
                   ),
                 ),
               ),
             ),
 
           // Content
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: isMobile ? 0 : 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(height: isMobile ? 72 : 64),
-
-                Text(
-                  'HOW IT ALL BEGAN',
-                  style: GoogleFonts.jost(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w200,
-                    letterSpacing: 5.5,
-                    color: AppColors.gold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-
-                RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    style: GoogleFonts.cormorantGaramond(
-                      fontSize: isMobile ? 36 : 48,
-                      fontWeight: FontWeight.w300,
-                      color: AppColors.cream,
-                      height: 1.15,
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 20 : 60,
+                vertical: isMobile ? 20 : 40,
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'HOW IT ALL BEGAN',
+                    style: GoogleFonts.jost(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w200,
+                      letterSpacing: 5.5,
+                      color: AppColors.gold,
                     ),
-                    children: const [
-                      TextSpan(text: 'Our '),
-                      TextSpan(
-                        text: 'story',
-                        style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: AppColors.rose),
+                  ),
+                  const SizedBox(height: 12),
+
+                  RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: GoogleFonts.cormorantGaramond(
+                        fontSize: isMobile ? 36 : 54,
+                        fontWeight: FontWeight.w300,
+                        color: AppColors.cream,
+                        height: 1.1,
                       ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: isMobile ? 36 : 24),
-
-                if (isMobile)
-                  Expanded(child: _mobileTimeline())
-                else
-                  Expanded(
-                    child: OverflowBox(
-                      alignment: Alignment.topCenter,
-                      maxHeight: double.infinity,
-                      child: _desktopTimeline(size),
+                      children: const [
+                        TextSpan(text: 'Our '),
+                        TextSpan(
+                          text: 'story',
+                          style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: AppColors.rose),
+                        ),
+                      ],
                     ),
                   ),
-              ],
+                  const SizedBox(height: 50),
+
+                  // Static Timeline
+                  Expanded(
+                    child: isMobile
+                        ? _mobileTimeline()
+                        : _desktopStaticTimeline(),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -240,101 +191,27 @@ class TimelineSectionState extends State<TimelineSection>
   }
 
   Widget _mobileTimeline() {
-    return Listener(
-      onPointerMove: (event) {
-        if (!_timelineScroll.hasClients) return;
-
-        final atTop = _timelineScroll.offset <= 0;
-        final atBottom = _timelineAtBottom;
-        final dy = event.delta.dy;
-
-        // At boundaries — do nothing, let home_screen's Listener take over
-        if (atBottom && dy < 0) return;
-        if (atTop && dy > 0) return;
-
-        // Otherwise consume the drag internally
-        final newOffset = (_timelineScroll.offset - dy)
-            .clamp(0.0, _timelineScroll.position.maxScrollExtent);
-        _timelineScroll.jumpTo(newOffset);
-      },
-      child: SingleChildScrollView(
-        controller: _timelineScroll,
-        physics: const NeverScrollableScrollPhysics(),
-        child: Column(
-          children: [
-            ...List.generate(_milestones.length, (i) {
-              final m = _milestones[i];
-              return AnimatedBuilder(
-                animation: _ctrl,
-                builder: (context, child) => FadeTransition(
-                  opacity: _opacities[i],
-                  child: SlideTransition(position: _offsets[i], child: child),
-                ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.only(left: 24, right: 24, bottom: 32),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(children: [const SizedBox(height: 5), _dot()]),
-                      const SizedBox(width: 20),
-                      Expanded(child: _itemContent(m, TextAlign.left)),
-                    ],
-                  ),
-                ),
-              );
-            }),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _desktopTimeline(Size size) {
-    return ClipRect(
+    // Mobile remains scrollable as there might be less vertical space
+    return SingleChildScrollView(
+      controller: _timelineScroll,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(_milestones.length, (i) {
           final m = _milestones[i];
-          final isLeft = i.isEven;
           return AnimatedBuilder(
             animation: _ctrl,
             builder: (context, child) => FadeTransition(
               opacity: _opacities[i],
               child: SlideTransition(position: _offsets[i], child: child),
             ),
-            child: SizedBox(
-              width: double.infinity,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 48),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: isLeft
-                    ? [
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 36),
-                              child: _itemContent(m, TextAlign.right),
-                            ),
-                          ),
-                        ),
-                        _dot(),
-                        const Expanded(child: SizedBox()),
-                      ]
-                    : [
-                        const Expanded(child: SizedBox()),
-                        _dot(),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 36),
-                              child: _itemContent(m, TextAlign.left),
-                            ),
-                          ),
-                        ),
-                      ],
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(children: [const SizedBox(height: 6), _dot()]),
+                  const SizedBox(width: 20),
+                  Expanded(child: _itemContent(m, TextAlign.left)),
+                ],
               ),
             ),
           );
@@ -343,14 +220,62 @@ class TimelineSectionState extends State<TimelineSection>
     );
   }
 
+  Widget _desktopStaticTimeline() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(_milestones.length, (i) {
+        final m = _milestones[i];
+        final isLeft = i.isEven;
+
+        return AnimatedBuilder(
+          animation: _ctrl,
+          builder: (context, child) => FadeTransition(
+            opacity: _opacities[i],
+            child: SlideTransition(position: _offsets[i], child: child),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: isLeft
+                ? [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 52),
+                          child: _itemContent(m, TextAlign.right),
+                        ),
+                      ),
+                    ),
+                    _dot(),
+                    const Expanded(child: SizedBox()),
+                  ]
+                : [
+                    const Expanded(child: SizedBox()),
+                    _dot(),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 52),
+                          child: _itemContent(m, TextAlign.left),
+                        ),
+                      ),
+                    ),
+                  ],
+          ),
+        );
+      }),
+    );
+  }
+
   Widget _dot() {
     return Container(
-      width: 12,
-      height: 12,
+      width: 13,
+      height: 13,
       decoration: BoxDecoration(
         color: AppColors.rose,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.roseLight, width: 2),
+        border: Border.all(color: AppColors.roseLight, width: 2.5),
       ),
     );
   }
@@ -365,33 +290,33 @@ class TimelineSectionState extends State<TimelineSection>
           m.date.toUpperCase(),
           textAlign: align,
           style: GoogleFonts.jost(
-            fontSize: 9.5,
+            fontSize: 10,
             fontWeight: FontWeight.w300,
-            letterSpacing: 3,
+            letterSpacing: 3.2,
             color: AppColors.gold,
           ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 8),
         Text(
           m.title,
           textAlign: align,
           style: GoogleFonts.cormorantGaramond(
-            fontSize: 22,
+            fontSize: 24,
             fontWeight: FontWeight.w400,
             color: AppColors.cream,
-            height: 1.2,
+            height: 1.15,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 10),
         Text(
           m.description,
           textAlign: align,
           style: GoogleFonts.cormorantGaramond(
-            fontSize: 15,
+            fontSize: 15.5,
             fontWeight: FontWeight.w400,
             fontStyle: FontStyle.italic,
-            color: AppColors.cream.withOpacity(0.78),
-            height: 1.65,
+            color: AppColors.cream.withOpacity(0.8),
+            height: 1.6,
           ),
         ),
       ],

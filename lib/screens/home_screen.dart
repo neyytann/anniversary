@@ -82,8 +82,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Touch handlers ──────────────────────────────────────────────────────────
 
+  
   void _onPointerDown(PointerDownEvent event) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    if (!isMobile) return;
+
     if (event.kind != PointerDeviceKind.touch) return;
+
     _dragStartY = event.position.dy;
     _lastDragY = event.position.dy;
     _dragStartOffset = _scrollController.offset;
@@ -93,6 +98,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onPointerMove(PointerMoveEvent event) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    if (!isMobile) return;
+
     if (event.kind != PointerDeviceKind.touch) return;
     if (_dragStartY == null) return;
 
@@ -113,6 +121,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onPointerUp(PointerUpEvent event) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    if (!isMobile) return;
+    
     if (event.kind != PointerDeviceKind.touch) return;
     if (_dragStartY == null) return;
 
@@ -156,22 +167,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Mouse wheel ─────────────────────────────────────────────────────────────
 
+  double _wheelAccumulated = 0;
+
   void _onPointerSignal(PointerSignalEvent event) {
     if (event is! PointerScrollEvent || _isSnapping) return;
-    if (_currentPage == 4) {
-      final swipingUp = event.scrollDelta.dy > 0;
-      final shouldNavigate = _timelineKey.currentState
-          ?.checkBoundaryAndShouldNavigate(swipingUp) ?? false;
-      if (shouldNavigate) {
-        _goToPage(swipingUp ? _currentPage + 1 : _currentPage - 1);
-      }
-      return;
-    }
-    if (event.scrollDelta.dy > 0) {
+
+    // accumulate scroll instead of immediate page change
+    _wheelAccumulated += event.scrollDelta.dy;
+
+    const threshold = 80.0;
+
+    if (_wheelAccumulated.abs() < threshold) return;
+
+    if (_wheelAccumulated > 0) {
       _goToPage(_currentPage + 1);
-    } else if (event.scrollDelta.dy < 0) {
+    } else {
       _goToPage(_currentPage - 1);
     }
+
+    _wheelAccumulated = 0;
   }
 
   @override

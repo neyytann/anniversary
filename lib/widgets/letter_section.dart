@@ -323,7 +323,7 @@ class LetterSection extends StatelessWidget {
                                               fontWeight: FontWeight.w300,
                                               fontStyle: FontStyle.italic,
                                               color: AppColors.roseDeep,
-                                              height: 1.3,
+                                              height: 1.1,
                                             ),
                                           ),
                                         ],

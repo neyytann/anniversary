@@ -39,6 +39,10 @@ class _HomeScreenState extends State<HomeScreen> {
   static const double _swipeThreshold = 40.0;
   static const double _velocityThreshold = 0.3;
 
+  // Wheel: track whether we've already fired a page change for this gesture
+  double _wheelAccumulated = 0;
+  bool _wheelFired = false;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _goToPage(int page) {
     if (_isSnapping) return;
     final clamped = page.clamp(0, _sectionCount - 1);
+    if (clamped == _currentPage) return; // already there — no-op
     _isSnapping = true;
     _scrollController
         .animateTo(
@@ -82,11 +87,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Touch handlers ──────────────────────────────────────────────────────────
 
-  
   void _onPointerDown(PointerDownEvent event) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     if (!isMobile) return;
-
     if (event.kind != PointerDeviceKind.touch) return;
 
     _dragStartY = event.position.dy;
@@ -100,7 +103,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onPointerMove(PointerMoveEvent event) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     if (!isMobile) return;
-
     if (event.kind != PointerDeviceKind.touch) return;
     if (_dragStartY == null) return;
 
@@ -110,6 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _lastDragY = event.position.dy;
 
     if (_currentPage == 4) {
+      // Let timeline inner scroll handle it; don't move the page
       _timelineConsumedDrag = true;
       return;
     }
@@ -123,7 +126,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onPointerUp(PointerUpEvent event) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     if (!isMobile) return;
-    
     if (event.kind != PointerDeviceKind.touch) return;
     if (_dragStartY == null) return;
 
@@ -136,13 +138,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_timelineConsumedDrag) {
       _timelineConsumedDrag = false;
 
-      final swipingUp = totalDrag > 0;   // finger up → next page
+      final swipingUp = totalDrag > 0; // finger moves up → next page
       final hasMomentum = absVelocity > _velocityThreshold ||
           totalDrag.abs() > _swipeThreshold;
 
       if (hasMomentum) {
         final shouldNavigate = _timelineKey.currentState
-            ?.checkBoundaryAndShouldNavigate(swipingUp) ?? false;
+                ?.checkBoundaryAndShouldNavigate(swipingUp) ??
+            false;
 
         if (shouldNavigate) {
           _goToPage(swipingUp ? _currentPage + 1 : _currentPage - 1);
@@ -150,16 +153,14 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
+      // Stay on current page — snap back cleanly
       _goToPage(_currentPage);
       return;
     }
 
+    // Standard page-snap: exactly one page per gesture
     if (absVelocity > _velocityThreshold || totalDrag.abs() > _swipeThreshold) {
-      if (totalDrag > 0) {
-        _goToPage(_currentPage + 1);
-      } else {
-        _goToPage(_currentPage - 1);
-      }
+      _goToPage(totalDrag > 0 ? _currentPage + 1 : _currentPage - 1);
     } else {
       _goToPage(_currentPage);
     }
@@ -167,24 +168,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Mouse wheel ─────────────────────────────────────────────────────────────
 
-  double _wheelAccumulated = 0;
-
   void _onPointerSignal(PointerSignalEvent event) {
     if (event is! PointerScrollEvent || _isSnapping) return;
 
-    // accumulate scroll instead of immediate page change
     _wheelAccumulated += event.scrollDelta.dy;
 
     const threshold = 80.0;
 
-    if (_wheelAccumulated.abs() < threshold) return;
-
-    if (_wheelAccumulated > 0) {
-      _goToPage(_currentPage + 1);
-    } else {
-      _goToPage(_currentPage - 1);
+    // Only fire once per wheel gesture; reset when scroll delta reverses
+    if (_wheelFired) {
+      // Wait until the user pauses (small delta) before accepting next gesture
+      if (event.scrollDelta.dy.abs() < 5) {
+        _wheelFired = false;
+        _wheelAccumulated = 0;
+      }
+      return;
     }
 
+    if (_wheelAccumulated.abs() < threshold) return;
+
+    _goToPage(_wheelAccumulated > 0 ? _currentPage + 1 : _currentPage - 1);
+    _wheelFired = true;
     _wheelAccumulated = 0;
   }
 
@@ -215,8 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: h,
                         child: TimelineSection(
                           key: _timelineKey,
-                          onBoundaryChanged: (atTop, atBottom) {
-                          },
+                          onBoundaryChanged: (atTop, atBottom) {},
                         ),
                       ),
                       SizedBox(height: h, child: const LetterSection()),
@@ -233,10 +236,10 @@ class _HomeScreenState extends State<HomeScreen> {
             isScrolled: _currentPage > 0,
             currentPage: _currentPage,
             onCountdown: () => _goToPage(1),
-            onGallery:   () => _goToPage(2),
-            onVideos:    () => _goToPage(3),
-            onTimeline:  () => _goToPage(4),
-            onLetter:    () => _goToPage(5),
+            onGallery: () => _goToPage(2),
+            onVideos: () => _goToPage(3),
+            onTimeline: () => _goToPage(4),
+            onLetter: () => _goToPage(5),
           ),
 
           // Dot indicators

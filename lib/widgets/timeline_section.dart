@@ -34,8 +34,11 @@ class TimelineSectionState extends State<TimelineSection>
   late List<Animation<double>> _opacities;
   late List<Animation<Offset>> _offsets;
 
-  // We still keep the controller for boundary detection if needed by parent
   final ScrollController _timelineScroll = ScrollController();
+
+  // Track inner scroll boundaries
+  bool _atTop = true;
+  bool _atBottom = false;
 
   @override
   void initState() {
@@ -66,29 +69,65 @@ class TimelineSectionState extends State<TimelineSection>
       );
     });
 
+    _timelineScroll.addListener(_onInnerScroll);
+
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) _ctrl.forward();
     });
   }
 
+  void _onInnerScroll() {
+    if (!_timelineScroll.hasClients) return;
+    final pos = _timelineScroll.position;
+    final atTop = pos.pixels <= pos.minScrollExtent + 1;
+    final atBottom = pos.pixels >= pos.maxScrollExtent - 1;
+
+    if (atTop != _atTop || atBottom != _atBottom) {
+      _atTop = atTop;
+      _atBottom = atBottom;
+      widget.onBoundaryChanged?.call(_atTop, _atBottom);
+    }
+  }
+
   @override
   void dispose() {
+    _timelineScroll.removeListener(_onInnerScroll);
     _timelineScroll.dispose();
     _ctrl.dispose();
     super.dispose();
   }
 
-  // Keep this method in case parent still uses it
-  bool checkBoundaryAndShouldNavigate(bool swipingUp) => false;
+  /// Called by HomeScreen to decide if the parent should navigate to next/prev page.
+  /// [swipingUp] = true means finger went up (→ trying to go to next page).
+  ///
+  /// Returns true (allow parent navigation) only when the inner list has
+  /// already reached the relevant boundary:
+  ///   • swiping up   → allow only if inner scroll is at the BOTTOM
+  ///   • swiping down → allow only if inner scroll is at the TOP
+  bool checkBoundaryAndShouldNavigate(bool swipingUp) {
+    if (!_timelineScroll.hasClients) return true;
+    final pos = _timelineScroll.position;
+
+    // If content doesn't overflow (no scrolling needed), always allow navigation
+    if (pos.maxScrollExtent <= 0) return true;
+
+    if (swipingUp) {
+      // Going to next page: only if we're already scrolled to the very bottom
+      return pos.pixels >= pos.maxScrollExtent - 2;
+    } else {
+      // Going to previous page: only if we're already at the very top
+      return pos.pixels <= pos.minScrollExtent + 2;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isMobile = size.width < 600;
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      height: size.height,                    // Full screen height
+      height: size.height,
       child: Stack(
         children: [
           // Background
@@ -175,7 +214,7 @@ class TimelineSectionState extends State<TimelineSection>
                   ),
                   const SizedBox(height: 50),
 
-                  // Static Timeline
+                  // Timeline list
                   Expanded(
                     child: isMobile
                         ? _mobileTimeline()
@@ -190,35 +229,43 @@ class TimelineSectionState extends State<TimelineSection>
     );
   }
 
+  // ── Mobile: scrollable list that hands off to parent at boundaries ──────────
+
   Widget _mobileTimeline() {
-    // Mobile remains scrollable as there might be less vertical space
-    return SingleChildScrollView(
-      controller: _timelineScroll,
-      child: Column(
-        children: List.generate(_milestones.length, (i) {
-          final m = _milestones[i];
-          return AnimatedBuilder(
-            animation: _ctrl,
-            builder: (context, child) => FadeTransition(
-              opacity: _opacities[i],
-              child: SlideTransition(position: _offsets[i], child: child),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 48),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Column(children: [const SizedBox(height: 6), _dot()]),
-                  const SizedBox(width: 20),
-                  Expanded(child: _itemContent(m, TextAlign.left)),
-                ],
+    return ScrollConfiguration(
+      // Keep default bounce/glow but let our Listener in HomeScreen see events
+      behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+      child: SingleChildScrollView(
+        controller: _timelineScroll,
+        physics: const ClampingScrollPhysics(), // no bounce so boundary is clear
+        child: Column(
+          children: List.generate(_milestones.length, (i) {
+            final m = _milestones[i];
+            return AnimatedBuilder(
+              animation: _ctrl,
+              builder: (context, child) => FadeTransition(
+                opacity: _opacities[i],
+                child: SlideTransition(position: _offsets[i], child: child),
               ),
-            ),
-          );
-        }),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 48),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(children: [const SizedBox(height: 6), _dot()]),
+                    const SizedBox(width: 20),
+                    Expanded(child: _itemContent(m, TextAlign.left)),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ),
       ),
     );
   }
+
+  // ── Desktop: static, no inner scroll needed ─────────────────────────────────
 
   Widget _desktopStaticTimeline() {
     return Column(

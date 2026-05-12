@@ -17,8 +17,9 @@ const RESOURCES = {"assets/assets/images/bebe3.jpg": "dc96144c43f13f7a674b9314b3
 "assets/AssetManifest.bin": "8f4cb720c36772905a2731ea96bda8c0",
 "assets/NOTICES": "21beecc8af5672e42e637c82e3a21517",
 "assets/FontManifest.json": "7b2a36307916a9721811788013e65289",
-"index.html": "99ff2190b9c7c17de902a1f2f944373a",
-"/": "99ff2190b9c7c17de902a1f2f944373a",
+"bebe.png": "4abbd4b6d807af4b61d4f23ccb92211d",
+"index.html": "6f0ec269d14576502ec62d0e5ded6dcb",
+"/": "6f0ec269d14576502ec62d0e5ded6dcb",
 "canvaskit/skwasm.js.symbols": "c3c05bd50bdf59da8626bbe446ce65a3",
 "canvaskit/chromium/canvaskit.js.symbols": "ee7e331f7f5bbf5ec937737542112372",
 "canvaskit/chromium/canvaskit.wasm": "399e2344480862e2dfa26f12fa5891d7",
@@ -36,7 +37,7 @@ const RESOURCES = {"assets/assets/images/bebe3.jpg": "dc96144c43f13f7a674b9314b3
 "canvaskit/skwasm_heavy.wasm": "4400a7d92341804dc8831ace18f6a0de",
 "canvaskit/skwasm.js": "5d4f9263ec93efeb022bb14a3881d240",
 "flutter.js": "383e55f7f3cce5be08fcf1f3881f585c",
-"flutter_bootstrap.js": "eb6df219e18a5713ed2a3507e1a31ff5",
+"flutter_bootstrap.js": "2e7e2ebaa900a7be48b3b0cfab6729cd",
 "main.dart.js": "c0a24b0853280b1ac4d4bc0e5db9e8be",
 "version.json": "23d80a0fa83f47bf66bb5e5de88aa95b"};
 // The application shell files that are downloaded before a service worker can

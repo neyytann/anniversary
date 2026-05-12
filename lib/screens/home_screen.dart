@@ -29,17 +29,23 @@ class _HomeScreenState extends State<HomeScreen> {
   double? _lastDragY;
   double _dragStartOffset = 0;
   double _dragVelocity = 0;
-  bool _timelineConsumedDrag = false;
+
+  // Timeline boundary state — tracks whether the boundary was ALREADY hit
+  // before the current swipe began. Navigation only happens when this is true,
+  // i.e. the user is swiping *again* after having already reached the edge.
+  bool _timelineBoundaryWasAlreadyHit = false;
+  // Which direction the boundary was hit (true = bottom, false = top)
+  bool _timelineBoundaryAtBottom = false;
 
   static const _sectionCount = 7;
   static const _sectionLabels = [
     'Home', 'Countdown', 'Gallery', 'Videos', 'Timeline', 'Letter', 'Forever',
   ];
 
-  static const double _swipeThreshold = 40.0;
-  static const double _velocityThreshold = 0.3;
+  static const double _swipeThreshold = 50.0;
+  static const double _velocityThreshold = 0.5;
 
-  // Wheel: track whether we've already fired a page change for this gesture
+  // Wheel
   double _wheelAccumulated = 0;
   bool _wheelFired = false;
 
@@ -62,16 +68,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final page = (_scrollController.offset / _pageHeight)
         .round()
         .clamp(0, _sectionCount - 1);
-    if (page != _currentPage) {
-      setState(() => _currentPage = page);
-    }
+    if (page != _currentPage) setState(() => _currentPage = page);
   }
 
   void _goToPage(int page) {
     if (_isSnapping) return;
     final clamped = page.clamp(0, _sectionCount - 1);
-    if (clamped == _currentPage) return; // already there — no-op
+    if (clamped == _currentPage) return;
     _isSnapping = true;
+    // Reset timeline boundary tracking whenever we leave the timeline page
+    if (_currentPage == 4) {
+      _timelineBoundaryWasAlreadyHit = false;
+    }
     _scrollController
         .animateTo(
           clamped * _pageHeight,
@@ -88,34 +96,28 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── Touch handlers ──────────────────────────────────────────────────────────
 
   void _onPointerDown(PointerDownEvent event) {
+    if (event.kind != PointerDeviceKind.touch) return;
     final isMobile = MediaQuery.of(context).size.width < 600;
     if (!isMobile) return;
-    if (event.kind != PointerDeviceKind.touch) return;
 
     _dragStartY = event.position.dy;
     _lastDragY = event.position.dy;
     _dragStartOffset = _scrollController.offset;
     _dragVelocity = 0;
-    _isSnapping = false;
-    _timelineConsumedDrag = false;
   }
 
   void _onPointerMove(PointerMoveEvent event) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    if (!isMobile) return;
     if (event.kind != PointerDeviceKind.touch) return;
-    if (_dragStartY == null) return;
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    if (!isMobile || _dragStartY == null || _isSnapping) return;
 
     if (_lastDragY != null) {
-      _dragVelocity = (_lastDragY! - event.position.dy);
+      _dragVelocity = _lastDragY! - event.position.dy;
     }
     _lastDragY = event.position.dy;
 
-    if (_currentPage == 4) {
-      // Let timeline inner scroll handle it; don't move the page
-      _timelineConsumedDrag = true;
-      return;
-    }
+    // On timeline page: do NOT move the parent — let inner scroll handle it
+    if (_currentPage == 4) return;
 
     final delta = _dragStartY! - event.position.dy;
     final newOffset = (_dragStartOffset + delta)
@@ -124,46 +126,57 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onPointerUp(PointerUpEvent event) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    if (!isMobile) return;
     if (event.kind != PointerDeviceKind.touch) return;
-    if (_dragStartY == null) return;
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    if (!isMobile || _dragStartY == null) return;
 
     final totalDrag = _dragStartY! - event.position.dy;
     final absVelocity = _dragVelocity.abs();
-
     _dragStartY = null;
     _lastDragY = null;
 
-    if (_timelineConsumedDrag) {
-      _timelineConsumedDrag = false;
+    final hasMomentum =
+        absVelocity > _velocityThreshold || totalDrag.abs() > _swipeThreshold;
 
-      final swipingUp = totalDrag > 0; // finger moves up → next page
-      final hasMomentum = absVelocity > _velocityThreshold ||
-          totalDrag.abs() > _swipeThreshold;
-
-      if (hasMomentum) {
-        final shouldNavigate = _timelineKey.currentState
-                ?.checkBoundaryAndShouldNavigate(swipingUp) ??
-            false;
-
-        if (shouldNavigate) {
-          _goToPage(swipingUp ? _currentPage + 1 : _currentPage - 1);
-          return;
-        }
-      }
-
-      // Stay on current page — snap back cleanly
-      _goToPage(_currentPage);
+    if (!hasMomentum) {
+      if (_currentPage != 4) _goToPage(_currentPage);
       return;
     }
 
-    // Standard page-snap: exactly one page per gesture
-    if (absVelocity > _velocityThreshold || totalDrag.abs() > _swipeThreshold) {
-      _goToPage(totalDrag > 0 ? _currentPage + 1 : _currentPage - 1);
-    } else {
-      _goToPage(_currentPage);
+    final swipingUp = totalDrag > 0; // finger moved up → want next page
+
+    if (_currentPage == 4) {
+      // Check where the inner scroll currently is
+      final atBoundary = _timelineKey.currentState
+              ?.checkBoundaryAndShouldNavigate(swipingUp) ??
+          true;
+
+      if (atBoundary) {
+        // The inner scroll has reached (or was already at) the edge.
+        // Only navigate if this boundary was ALREADY hit before this swipe —
+        // i.e. this is the user's second swipe past the edge.
+        final boundaryMatchesDirection =
+            _timelineBoundaryWasAlreadyHit &&
+            (swipingUp == _timelineBoundaryAtBottom);
+
+        if (boundaryMatchesDirection) {
+          // Second swipe at the same boundary → go to next/prev page
+          _timelineBoundaryWasAlreadyHit = false;
+          _goToPage(swipingUp ? _currentPage + 1 : _currentPage - 1);
+        } else {
+          // First time hitting this boundary — record it, stay on this page
+          _timelineBoundaryWasAlreadyHit = true;
+          _timelineBoundaryAtBottom = swipingUp; // true = hit bottom going up
+        }
+      } else {
+        // Not at boundary yet — inner scroll is still running, reset tracking
+        _timelineBoundaryWasAlreadyHit = false;
+      }
+      return;
     }
+
+    // All other pages: standard one-page snap
+    _goToPage(swipingUp ? _currentPage + 1 : _currentPage - 1);
   }
 
   // ── Mouse wheel ─────────────────────────────────────────────────────────────
@@ -172,12 +185,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (event is! PointerScrollEvent || _isSnapping) return;
 
     _wheelAccumulated += event.scrollDelta.dy;
-
     const threshold = 80.0;
 
-    // Only fire once per wheel gesture; reset when scroll delta reverses
     if (_wheelFired) {
-      // Wait until the user pauses (small delta) before accepting next gesture
       if (event.scrollDelta.dy.abs() < 5) {
         _wheelFired = false;
         _wheelAccumulated = 0;
@@ -219,7 +229,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: h,
                         child: TimelineSection(
                           key: _timelineKey,
-                          onBoundaryChanged: (atTop, atBottom) {},
+                          onBoundaryChanged: (atTop, atBottom) {
+                            // If the user scrolls back away from the boundary,
+                            // reset the "already hit" flag so they have to
+                            // reach the edge again before navigating.
+                            if (!atTop && !atBottom) {
+                              _timelineBoundaryWasAlreadyHit = false;
+                            }
+                          },
                         ),
                       ),
                       SizedBox(height: h, child: const LetterSection()),
@@ -231,7 +248,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // Navigation bar
           NavBar(
             isScrolled: _currentPage > 0,
             currentPage: _currentPage,
@@ -242,7 +258,6 @@ class _HomeScreenState extends State<HomeScreen> {
             onLetter: () => _goToPage(5),
           ),
 
-          // Dot indicators
           Positioned(
             right: 20,
             top: 0,

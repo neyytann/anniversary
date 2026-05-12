@@ -35,8 +35,6 @@ class TimelineSectionState extends State<TimelineSection>
   late List<Animation<Offset>> _offsets;
 
   final ScrollController _timelineScroll = ScrollController();
-
-  // Track inner scroll boundaries
   bool _atTop = true;
   bool _atBottom = false;
 
@@ -49,24 +47,21 @@ class TimelineSectionState extends State<TimelineSection>
 
     _opacities = List.generate(_milestones.length, (i) {
       final start = i * 0.18;
-      return Tween(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _ctrl,
-          curve: Interval(start, (start + 0.35).clamp(0, 1),
-              curve: Curves.easeOut),
-        ),
-      );
+      return Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+        parent: _ctrl,
+        curve:
+            Interval(start, (start + 0.35).clamp(0, 1), curve: Curves.easeOut),
+      ));
     });
 
     _offsets = List.generate(_milestones.length, (i) {
       final start = i * 0.18;
-      return Tween(begin: const Offset(0, 0.12), end: Offset.zero).animate(
-        CurvedAnimation(
-          parent: _ctrl,
-          curve: Interval(start, (start + 0.35).clamp(0, 1),
-              curve: Curves.easeOut),
-        ),
-      );
+      return Tween(begin: const Offset(0, 0.12), end: Offset.zero)
+          .animate(CurvedAnimation(
+        parent: _ctrl,
+        curve:
+            Interval(start, (start + 0.35).clamp(0, 1), curve: Curves.easeOut),
+      ));
     });
 
     _timelineScroll.addListener(_onInnerScroll);
@@ -81,7 +76,6 @@ class TimelineSectionState extends State<TimelineSection>
     final pos = _timelineScroll.position;
     final atTop = pos.pixels <= pos.minScrollExtent + 1;
     final atBottom = pos.pixels >= pos.maxScrollExtent - 1;
-
     if (atTop != _atTop || atBottom != _atBottom) {
       _atTop = atTop;
       _atBottom = atBottom;
@@ -97,26 +91,21 @@ class TimelineSectionState extends State<TimelineSection>
     super.dispose();
   }
 
-  /// Called by HomeScreen to decide if the parent should navigate to next/prev page.
-  /// [swipingUp] = true means finger went up (→ trying to go to next page).
-  ///
-  /// Returns true (allow parent navigation) only when the inner list has
-  /// already reached the relevant boundary:
-  ///   • swiping up   → allow only if inner scroll is at the BOTTOM
-  ///   • swiping down → allow only if inner scroll is at the TOP
+  /// Returns true only when the inner list is already at the relevant edge,
+  /// meaning it's safe for the parent to navigate to the next/previous page.
   bool checkBoundaryAndShouldNavigate(bool swipingUp) {
     if (!_timelineScroll.hasClients) return true;
     final pos = _timelineScroll.position;
 
-    // If content doesn't overflow (no scrolling needed), always allow navigation
+    // Content fits entirely — no inner scrolling needed, always allow
     if (pos.maxScrollExtent <= 0) return true;
 
     if (swipingUp) {
-      // Going to next page: only if we're already scrolled to the very bottom
-      return pos.pixels >= pos.maxScrollExtent - 2;
+      // Trying to go to next page: only allow if already at the bottom
+      return pos.pixels >= pos.maxScrollExtent - 4;
     } else {
-      // Going to previous page: only if we're already at the very top
-      return pos.pixels <= pos.minScrollExtent + 2;
+      // Trying to go to previous page: only allow if already at the top
+      return pos.pixels <= pos.minScrollExtent + 4;
     }
   }
 
@@ -130,7 +119,6 @@ class TimelineSectionState extends State<TimelineSection>
       height: size.height,
       child: Stack(
         children: [
-          // Background
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -148,7 +136,6 @@ class TimelineSectionState extends State<TimelineSection>
             ),
           ),
 
-          // Decorative vertical line (desktop only)
           if (!isMobile)
             Positioned(
               left: size.width / 2,
@@ -172,7 +159,6 @@ class TimelineSectionState extends State<TimelineSection>
               ),
             ),
 
-          // Content
           SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(
@@ -191,7 +177,6 @@ class TimelineSectionState extends State<TimelineSection>
                     ),
                   ),
                   const SizedBox(height: 12),
-
                   RichText(
                     textAlign: TextAlign.center,
                     text: TextSpan(
@@ -213,8 +198,6 @@ class TimelineSectionState extends State<TimelineSection>
                     ),
                   ),
                   const SizedBox(height: 50),
-
-                  // Timeline list
                   Expanded(
                     child: isMobile
                         ? _mobileTimeline()
@@ -229,15 +212,15 @@ class TimelineSectionState extends State<TimelineSection>
     );
   }
 
-  // ── Mobile: scrollable list that hands off to parent at boundaries ──────────
-
   Widget _mobileTimeline() {
-    return ScrollConfiguration(
-      // Keep default bounce/glow but let our Listener in HomeScreen see events
-      behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
-      child: SingleChildScrollView(
-        controller: _timelineScroll,
-        physics: const ClampingScrollPhysics(), // no bounce so boundary is clear
+    return SingleChildScrollView(
+      controller: _timelineScroll,
+      // ClampingScrollPhysics: no rubber-band, so maxScrollExtent boundary
+      // is hit cleanly and checkBoundaryAndShouldNavigate is reliable
+      physics: const ClampingScrollPhysics(),
+      child: Padding(
+        // Bottom padding so last item isn't flush against the edge
+        padding: const EdgeInsets.only(bottom: 24),
         child: Column(
           children: List.generate(_milestones.length, (i) {
             final m = _milestones[i];
@@ -265,15 +248,12 @@ class TimelineSectionState extends State<TimelineSection>
     );
   }
 
-  // ── Desktop: static, no inner scroll needed ─────────────────────────────────
-
   Widget _desktopStaticTimeline() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: List.generate(_milestones.length, (i) {
         final m = _milestones[i];
         final isLeft = i.isEven;
-
         return AnimatedBuilder(
           animation: _ctrl,
           builder: (context, child) => FadeTransition(

@@ -13,8 +13,11 @@ dependencies:
   google_fonts: ^6.1.0
   animate_do: ^3.3.4
   intl: ^0.19.0
+  video_player: ^2.9.2
+  chewie: ^1.8.5
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/videos/anniversary.mp4

@@ -17,12 +17,12 @@ class _CountdownSectionState extends State<CountdownSection> {
   bool _ended = false;
   static final _anniversary = DateTime(2026, 6, 4);
 
-  @override
-  void initState() {
-    super.initState();
-    _update();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _update());
-  }
+@override
+void initState() {
+  super.initState();
+  _timer = Timer.periodic(const Duration(seconds: 1), (_) => _update());
+  _update();
+}
 
   void _update() {
     final now = DateTime.now();

@@ -1,4 +1,13 @@
-2026/06/04-02:25:18.909 3ec Reusing MANIFEST C:\Users\Nathan\AppData\Local\Temp\flutter_tools.ffc29989\flutter_tools_chrome_device.d6fc4506\Default\Site Characteristics Database/MANIFEST-000001
-2026/06/04-02:25:18.910 3ec Recovering log #6
-2026/06/04-02:25:18.911 3ec Reusing old log C:\Users\Nathan\AppData\Local\Temp\flutter_tools.ffc29989\flutter_tools_chrome_device.d6fc4506\Default\Site Characteristics Database/000006.log 
-2026/06/04-02:25:18.912 3ec Delete type=0 #3
+2026/06/04-03:19:41.127 136c Reusing MANIFEST C:\Users\Nathan\AppData\Local\Temp\flutter_tools.58e4c534\flutter_tools_chrome_device.991fdd8e\Default\Site Characteristics Database/MANIFEST-000001
+2026/06/04-03:19:41.128 136c Recovering log #3
+2026/06/04-03:19:41.129 136c Level-0 table #13: started
+2026/06/04-03:19:41.149 136c Level-0 table #13: 223 bytes OK
+2026/06/04-03:19:41.150 136c Recovering log #6
+2026/06/04-03:19:41.150 136c Level-0 table #14: started
+2026/06/04-03:19:41.169 136c Level-0 table #14: 323 bytes OK
+2026/06/04-03:19:41.170 136c Recovering log #10
+2026/06/04-03:19:41.170 136c Reusing old log C:\Users\Nathan\AppData\Local\Temp\flutter_tools.58e4c534\flutter_tools_chrome_device.991fdd8e\Default\Site Characteristics Database/000010.log 
+2026/06/04-03:19:41.178 136c Delete type=0 #3
+2026/06/04-03:19:41.178 136c Delete type=2 #4
+2026/06/04-03:19:41.178 136c Delete type=2 #6
+2026/06/04-03:19:41.178 136c Delete type=0 #6

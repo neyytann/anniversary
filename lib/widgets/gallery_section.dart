@@ -7,10 +7,10 @@ class GallerySection extends StatelessWidget {
 
   static const _captions = [
     'Our first photo',
-    'A quiet moment',
-    'Adventures together',
-    'Laughing all day',
-    'Just us two',
+    'First departure from you',
+    'Clingy moments',
+    'Date at Mang Inasal',
+    'Third departure from you',
     'Forever favorite',
   ];
 

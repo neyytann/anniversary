@@ -19,11 +19,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final ScrollController _scrollController = ScrollController();
+  late PageController _pageController;
 
   int _currentPage = 0;
-  Timer? _snapTimer;
-  bool _isSnapping = false;
+
+  // Mouse wheel scroll accumulator (desktop only)
+  double _wheelAccum = 0;
+  Timer? _wheelTimer;
 
   static const _sectionCount = 7;
   static const _sectionLabels = [
@@ -33,65 +35,44 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
+    _pageController = PageController();
   }
 
   @override
   void dispose() {
-    _snapTimer?.cancel();
-    _scrollController.dispose();
+    _wheelTimer?.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 
-  double get _pageHeight => MediaQuery.of(context).size.height;
-
-  void _onScroll() {
-    if (_isSnapping) return;
-
-    // Update current page indicator while scrolling
-    final page = (_scrollController.offset / _pageHeight).round().clamp(0, _sectionCount - 1);
-    if (page != _currentPage) {
-      setState(() => _currentPage = page);
-    }
-
-    // Debounce: snap after user stops scrolling for 120ms
-    _snapTimer?.cancel();
-    _snapTimer = Timer(const Duration(milliseconds: 120), _snapToNearest);
-  }
-
-  void _snapToNearest() {
-    if (!_scrollController.hasClients || _isSnapping) return;
-
-    final offset = _scrollController.offset;
-    final page = (offset / _pageHeight).round().clamp(0, _sectionCount - 1);
-    final target = page * _pageHeight;
-
-    if ((offset - target).abs() < 1.0) return; // already snapped
-
-    _isSnapping = true;
-    _scrollController
-        .animateTo(
-          target,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeOutCubic,
-        )
-        .then((_) => _isSnapping = false);
-
-    setState(() => _currentPage = page);
-  }
-
   void _goToPage(int page) {
-    _snapTimer?.cancel();
-    _isSnapping = true;
-    final target = page * _pageHeight;
-    _scrollController
-        .animateTo(
-          target,
-          duration: const Duration(milliseconds: 700),
-          curve: Curves.easeInOut,
-        )
-        .then((_) => _isSnapping = false);
+    final target = page.clamp(0, _sectionCount - 1);
+    _pageController.animateToPage(
+      target,
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeInOut,
+    );
+    setState(() => _currentPage = target);
+  }
+
+  void _onPageChanged(int page) {
     setState(() => _currentPage = page);
+  }
+
+  // Desktop mouse wheel: accumulate delta, flip page when threshold crossed
+  void _onPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) return;
+
+    _wheelAccum += event.scrollDelta.dy;
+    _wheelTimer?.cancel();
+    _wheelTimer = Timer(const Duration(milliseconds: 80), () {
+      if (_wheelAccum > 40) {
+        _goToPage(_currentPage + 1);
+      } else if (_wheelAccum < -40) {
+        _goToPage(_currentPage - 1);
+      }
+      _wheelAccum = 0;
+    });
   }
 
   @override
@@ -100,40 +81,28 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.charcoal,
       body: Stack(
         children: [
-          // Scrollable sections
+          // ── Page view — one section at a time, swipeable on mobile ─────────
           Listener(
-            // Smooth mouse-wheel scrolling — don't block, just let it flow
-            onPointerSignal: (event) {
-              if (event is PointerScrollEvent && !_isSnapping) {
-                final newOffset = (_scrollController.offset + event.scrollDelta.dy)
-                    .clamp(0.0, _pageHeight * (_sectionCount - 1));
-                _scrollController.jumpTo(newOffset);
-              }
-            },
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              physics: const NeverScrollableScrollPhysics(),
+            onPointerSignal: _onPointerSignal,
+            child: PageView(
+              controller: _pageController,
               scrollDirection: Axis.vertical,
-              child: Builder(
-                builder: (context) {
-                  final h = MediaQuery.of(context).size.height;
-                  return Column(
-                    children: [
-                      SizedBox(height: h, child: const HeroSection()),
-                      SizedBox(height: h, child: const CountdownSection()),
-                      SizedBox(height: h, child: const GallerySection()),
-                      SizedBox(height: h, child: const VideoGallerySection()),
-                      SizedBox(height: h, child: const TimelineSection()),
-                      SizedBox(height: h, child: const LetterSection()),
-                      SizedBox(height: h, child: const FooterSection()),
-                    ],
-                  );
-                },
-              ),
+              onPageChanged: _onPageChanged,
+              // PageScrollPhysics gives the "one page at a time" snap on touch
+              physics: const PageScrollPhysics(),
+              children: const [
+                HeroSection(),
+                CountdownSection(),
+                GallerySection(),
+                VideoGallerySection(),
+                TimelineSection(),
+                LetterSection(),
+                FooterSection(),
+              ],
             ),
           ),
 
-          // Navigation bar
+          // ── Navigation bar ─────────────────────────────────────────────────
           NavBar(
             isScrolled: _currentPage > 0,
             currentPage: _currentPage,
@@ -144,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onLetter:    () => _goToPage(5),
           ),
 
-          // Dot indicators (right side)
+          // ── Dot indicators (right side) ────────────────────────────────────
           Positioned(
             right: 20,
             top: 0,
